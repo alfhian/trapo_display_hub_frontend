@@ -1,4 +1,20 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import DashboardPage from "./pages/DashboardPage";
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<DashboardPage />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+export default App;
+
+/*
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import ProtectedRoute from "./routes/ProtectedRoutes";
 
 // Importing the pages
@@ -25,3 +41,4 @@ function App() {
 }
 
 export default App;
+*/
