@@ -9,7 +9,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
 	const navigate = useNavigate();
 	
-  const handleLogin = async (event) => {
+  const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
 
@@ -27,7 +27,11 @@ const Login = () => {
       navigate('/dashboard'); // Redirect ke halaman dashboard setelah login sukses
     } catch (err) {
       console.error('Login gagal:', err);
-      setError(err.response?.data?.message || 'Login gagal, silakan coba lagi.');
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || 'Login gagal, silakan coba lagi.');
+      } else {
+        setError('Login gagal, silakan coba lagi.');
+      }
       setLoading(false);
     }
   };
@@ -50,8 +54,8 @@ const Login = () => {
             <form onSubmit={handleLogin}>
               <input 
                 type="text"
-                placeholder="NIS / NIK"
-                className="w-full mb-3 py-2 px-5 bg-white rounded-full mb-5"
+                placeholder="Username"
+                className="w-full py-2 px-5 bg-white rounded-full mb-5"
                 value={userid}
                 onChange={(e) => setUserid(e.target.value)}
                 required
@@ -59,7 +63,7 @@ const Login = () => {
               <input
                 type="password"
                 placeholder="Password"
-                className="w-full mb-3 py-2 px-5 bg-white rounded-full mb-3"
+                className="w-full py-2 px-5 bg-white rounded-full mb-3"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
