@@ -2,19 +2,16 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import RoleSelect from '../components/DropdownRole';
 import axios from 'axios';
-import { registerUser, loginUser } from '../services/authService';
 
 const Register = () => {
 	const [name, setName] = useState('');
-	const [role, setRole] = useState(null);
-	const [nis, setNis] = useState('');
-	const [nik, setNik] = useState('');
+  const [role, setRole] = useState<string | null>(null);
 	const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 	const [error, setError] = useState('');
 	const navigate = useNavigate();
 
-  const handleRegister = async (event) => {
+  const handleRegister = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
 		setLoading(true);
@@ -25,17 +22,17 @@ const Register = () => {
 			return;
 		}
 
-		const userid = nis || nik;
+		const userid = name;
 
 		try {
       const res = await axios.post('http://localhost:3000/api/auth/register', {
 				name,
-        userid,
+        userid: name,
         password,
 				role,
 				is_active: true,
 				created_at: new Date().toISOString(),
-				created_by: userid,
+				created_by: name,
       });
 
       console.log(res.data);
@@ -64,7 +61,11 @@ const Register = () => {
       navigate('/dashboard'); // Redirect ke halaman dashboard setelah register dan login sukses
     } catch (err) {
       console.error('Registrasi gagal:', err);
-      setError(err.response?.data?.message || 'Registrasi gagal, silakan coba lagi.');
+      if (typeof err === 'object' && err !== null && 'response' in err && typeof (err as any).response === 'object') {
+        setError((err as any).response?.data?.message || 'Registrasi gagal, silakan coba lagi.');
+      } else {
+        setError('Registrasi gagal, silakan coba lagi.');
+      }
       setLoading(false);
     }
   };
@@ -103,20 +104,6 @@ const Register = () => {
               <div className='mb-5'>
                 <RoleSelect role={role} setRole={setRole} />
               </div>
-							<input 
-								type="text"
-								placeholder="NIS"
-								className={`w-full py-2 px-5 bg-white rounded-full mb-5 ${role === 'SISWA' ? '' : ' hidden'}`}
-								value={nis}
-								onChange={(e) => setNis(e.target.value)}
-							/>
-							<input 
-								type="text"
-								placeholder="NIK"
-								className={`w-full py-2 px-5 bg-white rounded-full mb-5 ${role !== 'SISWA' && role !== null ? '' : ' hidden'}`}
-								value={nik}
-								onChange={(e) => setNik(e.target.value)}
-							/>
               <input
                 type="password"
                 placeholder="Password"
