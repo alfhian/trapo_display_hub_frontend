@@ -1,17 +1,19 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import DashboardPage from "./pages/DashboardPage";
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import DashboardPage from './pages/DashboardPage'
+import DisplayHubPage from './pages/DisplayHubPage'
 
 function App() {
   return (
-    <BrowserRouter>
+    <Router>
       <Routes>
         <Route path="/" element={<DashboardPage />} />
+        <Route path="/display-hub" element={<DisplayHubPage />} />
       </Routes>
-    </BrowserRouter>
-  );
+    </Router>
+  )
 }
 
-export default App;
+export default App
 
 /*
 import { BrowserRouter, Routes, Route } from "react-router-dom";

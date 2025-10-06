@@ -4,10 +4,15 @@ type StatusBadgeProps = {
 }
 
 const StatusBadge = ({ status }: StatusBadgeProps) => {
-  const color = status === 'Active' ? 'text-green-600' : 'text-red-600'
-  const icon = status === 'Active' ? '✔️' : '❌'
+  const isActive = status === 'Active'
+  const color = isActive ? 'text-green-600' : 'text-red-600'
+  const icon = isActive ? '✔️' : '❌'
 
-  return <span className={`text-sm font-semibold ${color}`}>{icon} {status}</span>
+  return (
+    <span className={`text-sm font-semibold ${color}`}>
+      {icon} {status}
+    </span>
+  )
 }
 
 export default StatusBadge
