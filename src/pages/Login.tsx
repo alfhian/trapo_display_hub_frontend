@@ -1,90 +1,90 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import Swal from "sweetalert2";
 
 const Login = () => {
-	const [userid, setUserid] = useState('');
-	const [password, setPassword] = useState('');
-	const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-	const navigate = useNavigate();
-	
-  const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setLoading(true);
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-    setError(''); // Reset error message
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!email || !password) {
+      Swal.fire("Oops!", "Please enter both email and password.", "warning");
+      return;
+    }
 
     try {
-      const res = await axios.post('http://localhost:3000/api/auth/login', {
-        userid,
-        password,
+      // 🔐 Simulasi response API JWT (ganti ini nanti ke fetch real API)
+      const fakeJWT =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." +
+        "eyJzdWIiOiIxMjM0NTY3ODkwIiwidXNlcmlkIjoiMTIzIiwicm9sZSI6ImFkbWluIiwibmFtZSI6IkR6dWxmaWthciIsImlzX2FjdGl2ZSI6dHJ1ZSwiZXhwIjoyNTM0MjE2MDAwfQ." +
+        "dummySignature123";
+
+      localStorage.setItem("token", fakeJWT);
+
+      Swal.fire({
+        icon: "success",
+        title: "Welcome back!",
+        text: "Login successful.",
+        timer: 1000,
+        showConfirmButton: false,
       });
-      const token = res.data.access_token;
-      localStorage.setItem('token', token); // atau simpan di cookie
-      setLoading(false);
-      console.log('Login berhasil:', res.data);
-      navigate('/dashboard'); // Redirect ke halaman dashboard setelah login sukses
-    } catch (err) {
-      console.error('Login gagal:', err);
-      if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.message || 'Login gagal, silakan coba lagi.');
-      } else {
-        setError('Login gagal, silakan coba lagi.');
-      }
-      setLoading(false);
+
+      setTimeout(() => navigate("/dashboard"), 1000);
+    } catch (error) {
+      Swal.fire("Error", "Invalid credentials.", "error");
     }
   };
 
-  const handleRegister = () => {
-    navigate('/register');
-  }
-
   return (
-    <div className='grid grid-cols-2'>
-      <div style={{ backgroundImage: "url('/img/login-background-small.png')" }} className='hidden md:block h-screen bg-cover bg-center'>
-      </div>
-      <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-        <div className="w-full max-w-md">
-          <div className="flex justify-center mb-12">
-            <h3 className='text-xl font-bold text-neutral-600'>Login</h3>
+    <div className="flex min-h-screen bg-[#f5f5f5] items-center justify-center px-6">
+      <div className="bg-white rounded-3xl shadow-lg p-10 w-full max-w-md">
+        <h1 className="text-2xl font-bold text-gray-800 text-center mb-6">Login</h1>
+
+        <form onSubmit={handleLogin} className="space-y-4">
+          <div>
+            <label className="block text-gray-700 text-sm font-medium mb-1">Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full border border-gray-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-[#7883FF]"
+              placeholder="you@example.com"
+              required
+            />
           </div>
-          {error && <div className="text-red-500 mb-4">{error}</div>}
-          <div className='mb-8'>
-            <form onSubmit={handleLogin}>
-              <input 
-                type="text"
-                placeholder="Username"
-                className="w-full py-2 px-5 bg-white rounded-full mb-5"
-                value={userid}
-                onChange={(e) => setUserid(e.target.value)}
-                required
-              />
-              <input
-                type="password"
-                placeholder="Password"
-                className="w-full py-2 px-5 bg-white rounded-full mb-3"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-              <div className='mb-8'>
-                <span className="ps-2 text-gray-500 font-medium whitespace-nowrap">Belum punya akun? <span className='text-blue-500 cursor-pointer' onClick={handleRegister}>Register</span></span>
-              </div>
-              <div className='flex justify-center'>
-                <button 
-                  className={`bg-green-500 w-[150px] text-white py-2 px-4 rounded-full hover:bg-emerald-300 transition-colors duration-200 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  type="submit"
-                >
-                  {loading ? 'Loading...' : 'Login'}
-                </button>
-              </div>
-            </form>
+
+          <div>
+            <label className="block text-gray-700 text-sm font-medium mb-1">Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full border border-gray-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-[#7883FF]"
+              placeholder="********"
+              required
+            />
           </div>
-        </div>
+
+          <button
+            type="submit"
+            className="w-full py-3 mt-4 bg-[#7883FF] hover:bg-[#6a73e6] text-white rounded-full font-semibold transition-all duration-300"
+          >
+            Login
+          </button>
+        </form>
+
+        <p className="text-sm text-gray-600 text-center mt-5">
+          Don’t have an account?{" "}
+          <Link to="/register" className="text-[#7883FF] font-semibold hover:underline">
+            Register
+          </Link>
+        </p>
       </div>
     </div>
   );
-}
+};
 
 export default Login;
