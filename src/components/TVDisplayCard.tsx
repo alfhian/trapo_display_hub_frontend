@@ -1,3 +1,5 @@
+// src/components/TVDisplayCard.tsx
+
 import React from 'react'
 import { X } from 'lucide-react'
 import bgcard from '../assets/bgcard.png'
@@ -16,6 +18,7 @@ const formatDate = (dateString: string): string => {
   }
 }
 
+// ✅ TAMBAHKAN PROPS isTVOutput
 type TVDisplayCardProps = {
   data: {
     customerName: string
@@ -28,9 +31,11 @@ type TVDisplayCardProps = {
   } | null
   index: number
   onRemove: (index: number) => void
+  isTVOutput?: boolean // Prop baru untuk membedakan tampilan
 }
 
-function TVDisplayCard({ data, index, onRemove }: TVDisplayCardProps) {
+// ✅ TAMBAHKAN isTVOutput KE PARAMETER DAN BERI DEFAULT VALUE false
+function TVDisplayCard({ data, index, onRemove, isTVOutput = false }: TVDisplayCardProps) {
   if (!data) {
     return (
       <div className="w-full aspect-video bg-gray-200 flex items-center justify-center text-2xl sm:text-3xl md:text-4xl font-bold text-gray-500 rounded-3xl">
@@ -52,17 +57,20 @@ function TVDisplayCard({ data, index, onRemove }: TVDisplayCardProps) {
       {/* 🔹 Glow frame */}
       <div className="absolute inset-0 border border-white/20 rounded-3xl shadow-inner"></div>
 
-      {/* 🔹 Tombol Close */}
-      <button
-        onClick={() => onRemove(index)}
-        className="absolute top-4 right-4 z-20 p-1.5 bg-red-600/80 hover:bg-red-600 text-white rounded-full transition-all duration-300 shadow-md"
-        title="Remove this display"
-      >
-        <X className="h-4 w-4" />
-      </button>
+      {/* ✅ SEMBUNYIKAN TOMBOL JIKA DI MODE TV OUTPUT */}
+      {!isTVOutput && (
+        <button
+          onClick={() => onRemove(index)}
+          className="absolute top-4 right-4 z-20 p-1.5 bg-red-600/80 hover:bg-red-600 text-white rounded-full transition-all duration-300 shadow-md"
+          title="Remove this display"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      )}
 
       {/* 🔹 Konten */}
-      <div className="relative z-10 flex flex-col justify-between items-center h-full text-center px-8 py-8">
+      {/* ✅ SESUAIKAN PADDING BERDASARKAN MODE */}
+      <div className={`relative z-10 flex flex-col justify-between items-center h-full text-center ${isTVOutput ? 'px-16 py-16' : 'px-8 py-8'}`}>
         {/* CAR TYPE */}
         <div>
           <p className="text-base md:text-lg font-light text-gray-200 uppercase tracking-[0.25em] drop-shadow-[0_1px_3px_rgba(0,0,0,0.6)]">
@@ -71,7 +79,10 @@ function TVDisplayCard({ data, index, onRemove }: TVDisplayCardProps) {
           <h2
             className="font-extrabold text-white leading-tight"
             style={{
-              fontSize: 'clamp(2.8rem, 8vw, 5rem)',
+              // ✅ GUNAKAN FONT SIZE YANG BERBEDA
+              fontSize: isTVOutput 
+                ? 'clamp(4rem, 12vw, 8rem)' // Lebih besar untuk TV 32"
+                : 'clamp(2.8rem, 8vw, 5rem)', // Ukuran asli untuk Desktop
               textShadow: `
                 0 0 10px rgba(56, 71, 209, 0.7),
                 0 0 25px rgba(214, 51, 132, 0.5),
@@ -91,8 +102,12 @@ function TVDisplayCard({ data, index, onRemove }: TVDisplayCardProps) {
               Service Type
             </p>
             <p
-              className="text-3xl font-bold text-white"
+              className="font-bold text-white"
               style={{
+                // ✅ GUNAKAN FONT SIZE YANG BERBEDA
+                fontSize: isTVOutput
+                  ? 'clamp(2.5rem, 6vw, 4rem)' // Lebih besar untuk TV 32"
+                  : '1.875rem', // Ukuran asli untuk Desktop (text-3xl)
                 textShadow: '0 0 8px rgba(0,0,0,0.7)',
               }}
             >
@@ -102,11 +117,15 @@ function TVDisplayCard({ data, index, onRemove }: TVDisplayCardProps) {
 
           <div className="bg-black/40 backdrop-blur-md border border-white/30 rounded-2xl py-3 shadow-[inset_0_0_10px_rgba(255,255,255,0.1)]">
             <p className="text-sm uppercase text-gray-300 tracking-widest mb-1">
-              Licence Plate
+              Plate Number
             </p>
             <p
-              className="text-3xl font-bold text-white"
+              className="font-bold text-white"
               style={{
+                // ✅ GUNAKAN FONT SIZE YANG BERBEDA
+                fontSize: isTVOutput
+                  ? 'clamp(2.5rem, 6vw, 4rem)' // Lebih besar untuk TV 32"
+                  : '1.875rem', // Ukuran asli untuk Desktop (text-3xl)
                 textShadow: '0 0 8px rgba(0,0,0,0.7)',
               }}
             >
@@ -123,7 +142,10 @@ function TVDisplayCard({ data, index, onRemove }: TVDisplayCardProps) {
           <p
             className="text-white font-extrabold"
             style={{
-              fontSize: 'clamp(2rem, 5vw, 3rem)',
+              // ✅ GUNAKAN FONT SIZE YANG BERBEDA
+              fontSize: isTVOutput
+                ? 'clamp(3rem, 8vw, 5.5rem)' // Lebih besar untuk TV 32"
+                : 'clamp(2rem, 5vw, 3rem)', // Ukuran asli untuk Desktop
               textShadow: `
                 0 0 12px rgba(56, 71, 209, 0.7),
                 0 0 30px rgba(214, 51, 132, 0.5)

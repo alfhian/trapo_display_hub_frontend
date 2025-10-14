@@ -5,6 +5,8 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import DashboardPage from "./pages/DashboardPage";
 import DisplayHubPage from "./pages/DisplayHubPage";
+import SettingsPage from "./pages/SettingsPage";
+import TVOutputPage from "./pages/TVOutputPage";
 
 function App() {
   return (
@@ -16,20 +18,19 @@ function App() {
 
         {/* Protected Routes (Hanya bisa diakses kalau sudah login) */}
         <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <DashboardPage />
-            </ProtectedRoute>
+          path="/dashboard" element={<ProtectedRoute> <DashboardPage /> </ProtectedRoute>
           }
         />
         <Route
-          path="/display-hub"
-          element={
-            <ProtectedRoute>
-              <DisplayHubPage />
-            </ProtectedRoute>
+          path="/display-hub" element={<ProtectedRoute> <DisplayHubPage /> </ProtectedRoute>
           }
+        />
+        <Route
+          path="/display/:screenId" element={<ProtectedRoute> {/* <TVOutputPage /> */} </ProtectedRoute>
+          }
+        />
+        <Route
+        path="/settings" element={<ProtectedRoute> <SettingsPage /> </ProtectedRoute>}
         />
 
         {/* Default Redirect */}

@@ -1,14 +1,11 @@
-// DashboardPage.tsx
-
 import { useEffect, useState } from 'react'
 import Navbar from '../components/Navbar'
 import Sidebar from '../components/Sidebar'
 import Card from '../components/Card'
 import TVDisplayCard from '../components/TVDisplayCard'
-import Swal from 'sweetalert2' // ✅ IMPOR SWEETALERT2
-import 'sweetalert2/dist/sweetalert2.min.css' // ✅ IMPOR CSS SWEETALERT2
+import Swal from 'sweetalert2'
+import 'sweetalert2/dist/sweetalert2.min.css'
 
-// Tipe CardData sudah lengkap
 type CardData = {
   customerName: string
   brand: string
@@ -21,6 +18,7 @@ type CardData = {
 
 function DashboardPage() {
   const [cards, setCards] = useState<CardData[]>([null, null, null, null])
+  const [isSidebarHovered, setIsSidebarHovered] = useState(false)
 
   useEffect(() => {
     const stored = localStorage.getItem('dashboardSlots')
@@ -32,7 +30,6 @@ function DashboardPage() {
     localStorage.setItem('dashboardSlots', JSON.stringify(updated))
   }
 
-  // ✅ UBAH FUNGSI INI MENJADI async DAN TAMBAHKAN KONFIRMASI
   const handleRemoveFromDisplay = async (index: number) => {
     const result = await Swal.fire({
       title: 'Are you sure?',
@@ -71,40 +68,27 @@ function DashboardPage() {
     }
   }
 
-  return (
+ return (
     <div className="flex min-h-screen bg-[#f5f5f5]">
-      <div className="w-60 md:w-64">
-        <Sidebar />
-      </div>
-
+      <Sidebar isHovered={isSidebarHovered} setIsHovered={setIsSidebarHovered} />
       <main className="flex-1 px-4 sm:px-8 md:px-12 py-8 md:py-12 max-h-screen overflow-y-auto transition-all duration-300">
         <Navbar title="Dashboard" />
-
-        {/* Area Status Cards (tidak berubah) */}
-        <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-10">
+        <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-x-10 gap-y-5">
           {[0, 1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="bg-white rounded-3xl shadow-sm hover:shadow-md transition-all duration-300 p-4 sm:p-8"
-            >
-              <Card
-                number={i + 1}
-                status={cards[i]?.status === 'Active' ? 'Active' : 'Inactive'}
-                date={cards[i]?.time || '-'}
+            <div key={i} className="space-y-5">
+              <div className="bg-white rounded-4xl shadow-sm hover:shadow-md transition-all duration-300 p-4 sm:p-8">
+                <Card
+                  number={i + 1}
+                  status={cards[i]?.status === 'Active' ? 'Active' : 'Inactive'}
+                  date={cards[i]?.time || '-'}
+                />
+              </div>
+              <TVDisplayCard 
+                data={cards[i]} 
+                index={i} 
+                onRemove={handleRemoveFromDisplay}
               />
             </div>
-          ))}
-        </div>
-
-        {/* Grid Layar TV */}
-        <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-x-10 gap-y-10">
-          {cards.map((card, index) => (
-            <TVDisplayCard 
-              key={index} 
-              data={card} 
-              index={index} 
-              onRemove={handleRemoveFromDisplay} // ✅ LEWATKAN FUNGSI YANG SUDAH DIPERBAIKI
-            />
           ))}
         </div>
       </main>

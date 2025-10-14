@@ -1,9 +1,15 @@
+// DisplayHubPage.tsx
+
 import { useEffect, useState } from 'react'
 import { CheckCircle, XCircle } from 'lucide-react'
 import Swal from 'sweetalert2'
 import Navbar from '../components/Navbar'
 import Sidebar from '../components/Sidebar'
 import 'sweetalert2/dist/sweetalert2.min.css'
+
+// ✅ 1. IMPOR DARI FILE KONFIGURASI & UTILITAS
+import { getServices } from '../config/services'
+import { getEstimatedFinishDate } from '../utils/timeUtils'
 
 type CardData = {
   customerName: string
@@ -17,6 +23,7 @@ type CardData = {
 
 function DisplayHubPage() {
   const [cards, setCards] = useState<CardData[]>([null, null, null, null])
+  const [isSidebarHovered, setIsSidebarHovered] = useState(false)
 
   useEffect(() => {
     const stored = localStorage.getItem('dashboardSlots')
@@ -30,15 +37,14 @@ function DisplayHubPage() {
 
   const handleDisplay = (
     index: number,
-    formData: { customerName: string; brand: string; carType: string; service: string; licensePlate: string } // ✅ TAMBAHKAN licensePlate DI SINI
+    formData: { customerName: string; brand: string; carType: string; service: string; licensePlate: string }
   ) => {
-    const now = new Date()
-    const estimated = calculateEstimatedTime(now, formData.service)
+    // ✅ 2. GUNAKAN FUNSI UTILITAS BARU DAN FORMAT HASILNYA
+    const estimatedDate = getEstimatedFinishDate(formData.service)
     const updated = [...cards]
-    updated[index] = { ...formData, status: 'Active', time: estimated }
+    updated[index] = { ...formData, status: 'Active', time: estimatedDate.toLocaleString() }
     updateStorage(updated)
   }
-
 
   // ✅ Ganti handleRemove dengan SweetAlert2 konfirmasi
   const handleRemove = async (index: number) => {
@@ -85,10 +91,7 @@ function DisplayHubPage() {
 
   return (
     <div className="flex min-h-screen bg-[#f5f5f5] relative">
-      <div className="w-60 md:w-64">
-        <Sidebar />
-      </div>
-
+      <Sidebar isHovered={isSidebarHovered} setIsHovered={setIsSidebarHovered} />
       <main className="flex-1 px-4 sm:px-8 md:px-12 py-8 md:py-12 max-h-screen overflow-y-auto transition-all duration-300">
         <Navbar title="Display Hub" />
 
@@ -135,18 +138,6 @@ function DisplayHubPage() {
   )
 }
 
-function calculateEstimatedTime(start: Date, service: string): string {
-  const s = service.toLowerCase()
-  if (s.includes('carmat')) return new Date(start.getTime() + 30 * 60000).toLocaleString()
-  if (s.includes('dashcam')) return new Date(start.getTime() + 60 * 60000).toLocaleString()
-  if (s.includes('interior')) return new Date(start.getTime() + 180 * 60000).toLocaleString()
-  if (s.includes('quick shield')) return new Date(start.getTime() + 1 * 24 * 60 * 60000).toLocaleString()
-  if (s.includes('pro') || s.includes('diamond')) return new Date(start.getTime() + 3 * 24 * 60 * 60000).toLocaleString()
-  if (s.includes('ppf')) return (new Date(start.getTime() + 7 * 24 * 60 * 60000).toLocaleString())
-  if (s.includes('kaca film')) return new Date(start.getTime() + 120 * 60000).toLocaleString()
-  return '-'
-}
-
 function FormCard({
   index,
   initialData,
@@ -155,7 +146,7 @@ function FormCard({
 }: {
   index: number
   initialData: CardData
-  onDisplay: (index: number, formData: { customerName: string; brand: string; carType: string; service: string; licensePlate: string }) => void // ✅ TAMBAHKAN licensePlate DI SINI
+  onDisplay: (index: number, formData: { customerName: string; brand: string; carType: string; service: string; licensePlate: string }) => void
   onRemove: (index: number) => void
 }) {
   const [form, setForm] = useState({
@@ -165,6 +156,9 @@ function FormCard({
     service: initialData?.service || '',
     licensePlate: initialData?.licensePlate || '',
   })
+
+  // ✅ 3. TAMBAHKAN STATE UNTUK MENYIMPAN DAFTAR LAYANAN
+  const [services, setServices] = useState(getServices);
 
   useEffect(() => {
     if (initialData) {
@@ -181,7 +175,8 @@ function FormCard({
   }, [initialData])
 
   const isActive = !!initialData
-  const estimatedTime = form.service ? calculateEstimatedTime(new Date(), form.service) : '-'
+  // ✅ 4. GUNAKAN FUNSI UTILITAS BARU UNTUK MENGHITUNG ESTIMASI
+  const estimatedTime = form.service ? getEstimatedFinishDate(form.service).toLocaleString() : '-'
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value })
@@ -256,14 +251,12 @@ function FormCard({
           required
         >
           <option value="">Pilih layanan</option>
-          <option value="Instalasi Carmat">Instalasi Carmat</option>
-          <option value="Instalasi Dashcam">Instalasi Dashcam</option>
-          <option value="Coating Quick Shield">Coating Quick Shield</option>
-          <option value="Coating Pro">Coating Pro</option>
-          <option value="Coating Diamond">Coating Diamond</option>
-          <option value="PPF">PPF</option>
-          <option value="Interior Cleaning/Detailing">Interior Cleaning/Detailing</option>
-          <option value="Instal Kaca Film">Pemasangan Kaca Film</option>
+          {/* ✅ 5. MAP DARI STATE services YANG SUDAH DIPERBAHARUI */}
+          {services.map((service) => (
+            <option key={service.value} value={service.value}>
+              {service.label}
+            </option>
+          ))}
         </select>
       </div>
 
