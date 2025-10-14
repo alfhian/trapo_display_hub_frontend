@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { CheckCircle, XCircle } from "lucide-react"; // ✅ gunakan icon library modern
+import { CheckCircle, XCircle } from "lucide-react";
 
 type CardData = {
   customerName: string;
   brand: string;
   carType: string;
   service: string;
+  licensePlate: string;
   status?: string;
   time?: string;
 } | null;
@@ -39,7 +40,7 @@ export default function FormCard({
   initialData: CardData;
   onDisplay: (
     index: number,
-    formData: { customerName: string; brand: string; carType: string; service: string }
+    formData: { customerName: string; brand: string; carType: string; service: string; licensePlate: string } // ✅ TAMBAHKAN licensePlate DI SINI
   ) => void;
   onRemove: (index: number) => void;
 }) {
@@ -48,6 +49,7 @@ export default function FormCard({
     brand: initialData?.brand || "",
     carType: initialData?.carType || "",
     service: initialData?.service || "",
+    licensePlate: initialData?.licensePlate || "", // ✅ TAMBAHKAN INI
   });
 
   useEffect(() => {
@@ -57,9 +59,10 @@ export default function FormCard({
         brand: initialData.brand,
         carType: initialData.carType,
         service: initialData.service,
+        licensePlate: initialData.licensePlate, // ✅ TAMBAHKAN INI
       });
     } else {
-      setForm({ customerName: "", brand: "", carType: "", service: "" });
+      setForm({ customerName: "", brand: "", carType: "", service: "", licensePlate: "" }); // ✅ TAMBAHKAN INI
     }
   }, [initialData]);
 
@@ -130,6 +133,24 @@ export default function FormCard({
             />
           </div>
         ))}
+
+        {/* ✅ TAMBAHKAN INPUT FIELD UNTUK LICENSE PLATE */}
+        <div className="flex flex-col gap-1">
+          <label className="font-semibold text-gray-700">License Plate</label>
+          <input
+            type="text"
+            name="licensePlate"
+            value={form.licensePlate}
+            onChange={handleChange}
+            className={`w-full border rounded-md p-2 text-sm transition-all duration-300 ease-in-out ${
+              isActive
+                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                : "border-gray-300 hover:border-blue-400 focus:border-blue-500 focus:ring focus:ring-blue-100"
+            }`}
+            required
+            disabled={isActive}
+          />
+        </div>
 
         {/* Service */}
         <div className="flex flex-col gap-1">

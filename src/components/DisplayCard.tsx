@@ -1,3 +1,5 @@
+// src/components/DisplayCard.tsx
+
 type DisplayCardProps = {
   number: number
   status: 'Active' | 'Inactive'
@@ -5,6 +7,7 @@ type DisplayCardProps = {
   brand: string
   type: string
   service: string
+  licensePlate: string // ✅ TAMBAHKAN PROPS INI
   time: string
   action: 'Remove' | 'Display'
 }
@@ -16,6 +19,7 @@ const DisplayCard = ({
   brand,
   type,
   service,
+  licensePlate, // ✅ TAMBAHKAN INI
   time,
   action,
 }: DisplayCardProps) => {
@@ -46,6 +50,7 @@ const DisplayCard = ({
         <p>Car Brand: {brand}</p>
         <p>Type: {type}</p>
         <p>Service: {service}</p>
+        <p>Licence Plate: {licensePlate}</p> {/* ✅ TAMBAHKAN BARIS INI */}
         <p>Estimated Time: {time}</p>
       </div>
 

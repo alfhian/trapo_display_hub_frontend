@@ -1,28 +1,23 @@
-import { jwtDecode } from 'jwt-decode';
+// src/utils/jwtHelper.js
 
-interface DecodedToken {
-  sub: string;
-  userid: string;
-  role: string;
-  name: string;
-  is_active: boolean;
-  exp: number;
-}
-
-export function getUserFromToken(): DecodedToken | null {
-  const token = localStorage.getItem('token');
+export function getUserFromToken() {
+  const token = localStorage.getItem("token");
   if (!token) return null;
 
   try {
-    const decoded: DecodedToken = jwtDecode(token);
+    const parts = token.split(".");
+    if (parts.length !== 3) return null;
+
+    const decoded = JSON.parse(atob(parts[1]));
     const now = Date.now() / 1000;
-    if (decoded.exp < now) {
-      localStorage.removeItem('token');
+
+    if (decoded.exp && decoded.exp < now) {
+      localStorage.removeItem("token");
       return null;
     }
-    return decoded;
+
+    return decoded; // return object (sub, userid, role, name, exp, etc)
   } catch {
-    localStorage.removeItem('token');
     return null;
   }
 }

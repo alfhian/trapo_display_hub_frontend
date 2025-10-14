@@ -10,6 +10,7 @@ type CardData = {
   brand: string
   carType: string
   service: string
+  licensePlate: string
   status: string
   time: string
 } | null
@@ -29,7 +30,7 @@ function DisplayHubPage() {
 
   const handleDisplay = (
     index: number,
-    formData: { customerName: string; brand: string; carType: string; service: string }
+    formData: { customerName: string; brand: string; carType: string; service: string; licensePlate: string } // ✅ TAMBAHKAN licensePlate DI SINI
   ) => {
     const now = new Date()
     const estimated = calculateEstimatedTime(now, formData.service)
@@ -37,6 +38,7 @@ function DisplayHubPage() {
     updated[index] = { ...formData, status: 'Active', time: estimated }
     updateStorage(updated)
   }
+
 
   // ✅ Ganti handleRemove dengan SweetAlert2 konfirmasi
   const handleRemove = async (index: number) => {
@@ -138,16 +140,10 @@ function calculateEstimatedTime(start: Date, service: string): string {
   if (s.includes('carmat')) return new Date(start.getTime() + 30 * 60000).toLocaleString()
   if (s.includes('dashcam')) return new Date(start.getTime() + 60 * 60000).toLocaleString()
   if (s.includes('interior')) return new Date(start.getTime() + 180 * 60000).toLocaleString()
-  if (s.includes('quick shield'))
-    return new Date(start.getTime() + 1 * 24 * 60 * 60000).toLocaleString()
-  if (s.includes('pro') || s.includes('diamond'))
-    return new Date(start.getTime() + 3 * 24 * 60 * 60000).toLocaleString()
-  if (s.includes('ppf'))
-    return (
-      new Date(start.getTime() + 5 * 24 * 60 * 60000).toLocaleString() +
-      ' – ' +
-      new Date(start.getTime() + 7 * 24 * 60 * 60000).toLocaleString()
-    )
+  if (s.includes('quick shield')) return new Date(start.getTime() + 1 * 24 * 60 * 60000).toLocaleString()
+  if (s.includes('pro') || s.includes('diamond')) return new Date(start.getTime() + 3 * 24 * 60 * 60000).toLocaleString()
+  if (s.includes('ppf')) return (new Date(start.getTime() + 7 * 24 * 60 * 60000).toLocaleString())
+  if (s.includes('kaca film')) return new Date(start.getTime() + 120 * 60000).toLocaleString()
   return '-'
 }
 
@@ -159,7 +155,7 @@ function FormCard({
 }: {
   index: number
   initialData: CardData
-  onDisplay: (index: number, formData: { customerName: string; brand: string; carType: string; service: string }) => void
+  onDisplay: (index: number, formData: { customerName: string; brand: string; carType: string; service: string; licensePlate: string }) => void // ✅ TAMBAHKAN licensePlate DI SINI
   onRemove: (index: number) => void
 }) {
   const [form, setForm] = useState({
@@ -167,6 +163,7 @@ function FormCard({
     brand: initialData?.brand || '',
     carType: initialData?.carType || '',
     service: initialData?.service || '',
+    licensePlate: initialData?.licensePlate || '',
   })
 
   useEffect(() => {
@@ -176,9 +173,10 @@ function FormCard({
         brand: initialData.brand,
         carType: initialData.carType,
         service: initialData.service,
+        licensePlate: initialData.licensePlate,
       })
     } else {
-      setForm({ customerName: '', brand: '', carType: '', service: '' })
+      setForm({ customerName: '', brand: '', carType: '', service: '', licensePlate: '' })
     }
   }, [initialData])
 
@@ -226,6 +224,23 @@ function FormCard({
         </div>
       ))}
 
+    <div className="flex items-center justify-between gap-6 py-1">
+        <label className="w-36 sm:w-40 text-right font-semibold text-gray-800">License Plate</label>
+        <input
+          type="text"
+          name="licensePlate"
+          value={form.licensePlate}
+          onChange={handleChange}
+          className={`flex-1 border rounded-lg p-2 text-sm transition-all duration-300 ${
+            isActive
+              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              : 'border-gray-300 hover:border-blue-400 focus:border-blue-500 focus:ring focus:ring-blue-100'
+          }`}
+           disabled={isActive}
+          required
+        />
+      </div>
+
       <div className="flex items-center justify-between gap-6 py-1">
         <label className="w-36 sm:w-40 text-right font-semibold text-gray-800">Service</label>
         <select
@@ -248,6 +263,7 @@ function FormCard({
           <option value="Coating Diamond">Coating Diamond</option>
           <option value="PPF">PPF</option>
           <option value="Interior Cleaning/Detailing">Interior Cleaning/Detailing</option>
+          <option value="Instal Kaca Film">Pemasangan Kaca Film</option>
         </select>
       </div>
 

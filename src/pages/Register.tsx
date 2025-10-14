@@ -1,134 +1,117 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import RoleSelect from '../components/DropdownRole';
-import axios from 'axios';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
+import axios from "axios";
+import "../styles/RegisterGlow.css";
+import logoTrapo from "../assets/LOGO_TRAPO.png";
 
 const Register = () => {
-	const [name, setName] = useState('');
+  const [name, setName] = useState("");
   const [role, setRole] = useState<string | null>(null);
-	const [password, setPassword] = useState('');
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-	const [error, setError] = useState('');
-	const navigate = useNavigate();
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
 
-  const handleRegister = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
 
-		setLoading(true);
-		setError(''); // Reset error message
-    
-		if (!name || !role || !password) {
-			setError('Silakan isi semua field!');
-			return;
-		}
+    if (!name || !role || !password) {
+      Swal.fire("Oops!", "Silakan isi semua field!", "warning");
+      setLoading(false);
+      return;
+    }
 
-		const userid = name;
-
-		try {
-      const res = await axios.post('http://localhost:3000/api/auth/register', {
-				name,
+    try {
+      const res = await axios.post("http://localhost:3000/api/auth/register", {
+        name,
         userid: name,
         password,
-				role,
-				is_active: true,
-				created_at: new Date().toISOString(),
-				created_by: name,
+        role,
+        is_active: true,
+        created_at: new Date().toISOString(),
+        created_by: name,
       });
 
-      console.log(res.data);
-
-			if (!res.data.success) {
-				setError(res.data.message || 'Registrasi gagal, silakan coba lagi.');
-				setLoading(false);
-				throw new Error(res.data.message || 'Registrasi gagal, silakan coba lagi.');
-			}
-
-			const login = await axios.post('http://localhost:3000/auth/login', {
-        userid,
-        password,
-      });
-
-			if (!login.data.success) {
-				setError(login.data.message || 'Login gagal, silakan coba lagi.');
-				setLoading(false);
-				throw new Error(login.data.message || 'Login gagal, silakan coba lagi.');
-			}
-
-			const token = login.data.access_token;
-      localStorage.setItem('token', token); // atau simpan di cookie
-      setLoading(false);
-      console.log('Login berhasil:', res.data);
-      navigate('/dashboard'); // Redirect ke halaman dashboard setelah register dan login sukses
-    } catch (err) {
-      console.error('Registrasi gagal:', err);
-      if (typeof err === 'object' && err !== null && 'response' in err && typeof (err as any).response === 'object') {
-        setError((err as any).response?.data?.message || 'Registrasi gagal, silakan coba lagi.');
-      } else {
-        setError('Registrasi gagal, silakan coba lagi.');
+      if (!res.data.success) {
+        throw new Error(res.data.message || "Registrasi gagal");
       }
+
+      Swal.fire({
+        icon: "success",
+        title: "Registrasi berhasil!",
+        text: "Silakan login untuk melanjutkan.",
+        timer: 1500,
+        showConfirmButton: false,
+      });
+
+      setTimeout(() => navigate("/"), 1500);
+    } catch (err: any) {
+      Swal.fire(
+        "Error",
+        err?.response?.data?.message || "Registrasi gagal, silakan coba lagi.",
+        "error"
+      );
+    } finally {
       setLoading(false);
     }
   };
 
-	const handleLogin = () => {
-		navigate('/');
-	}
+  const handleLogin = () => navigate("/");
 
   return (
-    <div className='grid grid-cols-2'>
-      <div style={{ backgroundImage: "url('/img/login-background-small.png')" }} className='hidden md:block h-screen bg-cover bg-center'>
-      </div>
-      <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-        <div className="w-full max-w-md">
-          <div className="flex justify-center mb-12">
-            <h3 className='text-xl font-bold text-neutral-600'>Register</h3>
-          </div>
-					<div>
-						{error && <div className="text-red-500 mb-4">{error}</div>}
-					</div>
-          <div className='mb-8'>
-            {/* <div className="flex items-center my-6">
-              <div className="flex-grow h-px bg-gray-300"></div>
-                <span className="px-4 text-gray-500 font-medium whitespace-nowrap">Akses Siswa</span>
-              <div className="flex-grow h-px bg-gray-300"></div>
-            </div> */}
-            <form onSubmit={handleRegister}>
-              <input 
-                type="text"
-                placeholder="Name"
-                className="w-full py-2 px-5 bg-white rounded-full mb-5"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-              />
-              <div className='mb-5'>
-                <RoleSelect role={role} setRole={setRole} />
-              </div>
-              <input
-                type="password"
-                placeholder="Password"
-                className="w-full py-2 px-5 bg-white rounded-full mb-3"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-							<div className='mb-3'>
-								<span className='ps-2 text-gray-500 font-medium whitespace-nowrap'>Sudah punya akun? <span className='text-blue-500 cursor-pointer' onClick={handleLogin}>Sign in</span></span>
-							</div>
-              <div className='flex justify-center'>
-                <button 
-                  className={`bg-green-500 w-[150px] text-white py-2 px-4 rounded-full hover:bg-emerald-300 transition-colors duration-200 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  type="submit"
-                >
-									{loading ? 'Loading...' : 'Register'}
-                </button>
-              </div>
-            </form>
-          </div>
+    <div className="register-page min-h-screen flex items-center justify-center">
+      <div className="box">
+        <div className="form w-[70%]">
+          <img src={logoTrapo} alt="Trapo Logo" />
+
+          {error && <div className="text-red-400 text-sm">{error}</div>}
+
+          <form onSubmit={handleRegister} className="flex flex-col gap-4 w-full">
+            <input
+              type="text"
+              placeholder="Nama Lengkap"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
+
+            <select
+              value={role || ""}
+              onChange={(e) => setRole(e.target.value)}
+              required
+            >
+              <option value="" disabled>
+                Pilih Role
+              </option>
+              <option value="admin">Admin</option>
+              <option value="staff">Staff</option>
+              <option value="viewer">Viewer</option>
+            </select>
+
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+
+            <button type="submit" disabled={loading}>
+              {loading ? "Loading..." : "Register"}
+            </button>
+
+            <div className="bottom-text text-center">
+              Sudah punya akun?{" "}
+              <span onClick={handleLogin}>Sign in</span>
+            </div>
+          </form>
         </div>
       </div>
     </div>
   );
-}
+};
 
 export default Register;

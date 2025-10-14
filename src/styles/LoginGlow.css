@@ -1,0 +1,188 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
+
+.login-page * {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Poppins", sans-serif;
+}
+
+.login-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: #252432;
+}
+
+@property --a {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.login-page .box {
+  position: relative;
+  width: 400px;
+  height: 200px;
+  background: repeating-conic-gradient(
+    from var(--a),
+    #3847d1 0%,
+    #3847d1 5%,
+    transparent 5%,
+    transparent 40%,
+    #3847d1 50%
+  );
+  animation: rotateA 4s linear infinite;
+  border-radius: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  filter: drop-shadow(0 15px 50px #000);
+  transition: 0.5s;
+}
+
+/* garis LED warna magenta bergerak terbalik */
+.login-page .box::before {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: repeating-conic-gradient(
+    from calc(var(--a) * -1),
+    #d63384 0%,
+    #d63384 5%,
+    transparent 5%,
+    transparent 40%,
+    #d63384 50%
+  );
+  animation: rotateB 4s linear infinite;
+  border-radius: 20px;
+  filter: drop-shadow(0 15px 40px #000);
+}
+
+.login-page .box::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  background: #2d2d39;
+  border-radius: 15px;
+  border: 8px solid #25252b;
+}
+
+/* efek hover tetap tapi halus */
+.login-page .box:hover {
+  width: 440px;
+  height: 480px;
+  transition: 0.4s ease;
+}
+
+/* Animasi berlawanan arah */
+@keyframes rotateA {
+  0% { --a: 0deg; }
+  100% { --a: 360deg; }
+}
+
+@keyframes rotateB {
+  0% { --a: 360deg; }
+  100% { --a: 0deg; }
+}
+
+/* 🟦 Lapisan login */
+.login-page .login {
+  position: absolute;
+  inset: 60px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 10px;
+  flex-direction: column;
+  background: rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  box-shadow: inset 0 10px 20px rgba(0, 0, 0, 0.5);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  overflow: hidden;
+  transition: 0.5s;
+}
+
+.login-page .box:hover .login {
+  inset: 40px;
+}
+
+.login-page .loginBx {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  transform: translateY(120px);
+  gap: 20px;
+  width: 70%;
+  transition: 0.5s;
+}
+
+.login-page .box:hover .loginBx {
+  transform: translateY(0px);
+}
+
+/* 🧠 Logo Trapo */
+.login-page .loginBx img {
+  width: 130px;
+  filter: drop-shadow(0 0 8px #3847d1);
+}
+
+/* Input style */
+.login-page .loginBx input {
+  width: 100%;
+  padding: 10px 20px;
+  outline: none;
+  font-size: 1em;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.2);
+  border: 2px solid #fff;
+  border-radius: 30px;
+  transition: 0.3s;
+}
+
+.login-page .loginBx input::placeholder {
+  color: #bbb;
+}
+
+.login-page .loginBx input[type="submit"] {
+  background: linear-gradient(90deg, #3847d1, #d63384);
+  border: none;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  box-shadow: 0 0 10px #3847d1, 0 0 40px #d63384;
+  transition: 0.3s ease;
+}
+
+.login-page .loginBx input[type="submit"]:hover {
+  filter: brightness(1.2);
+  box-shadow: 0 0 15px #3847d1, 0 0 60px #d63384;
+}
+
+.login-page .group {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  font-size: 0.9em;
+}
+
+.login-page .group a {
+  color: #fff;
+  text-decoration: none;
+  transition: 0.3s;
+}
+
+.login-page .group a:hover {
+  text-shadow: 0 0 5px #45f3ff;
+}
+
+.login-page .group a:nth-child(2) {
+  color: #d63384;
+  font-weight: 600;
+}
