@@ -1,12 +1,14 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import ProtectedRoute from "./routes/ProtectedRoutes";
+import TVOutputPage from "./pages/TVOutputPage";
 
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import DashboardPage from "./pages/DashboardPage";
 import DisplayHubPage from "./pages/DisplayHubPage";
 import SettingsPage from "./pages/SettingsPage";
-import TVOutputPage from "./pages/TVOutputPage";
+import './styles/Navbar.css';
+import { Tv } from "lucide-react";
 
 function App() {
   return (
@@ -17,16 +19,18 @@ function App() {
         <Route path="/register" element={<Register />} />
 
         {/* Protected Routes (Hanya bisa diakses kalau sudah login) */}
+        /* ProtectedRoute */
         <Route
-          path="/dashboard" element={<ProtectedRoute> <DashboardPage /> </ProtectedRoute>
+          path="/dashboard" element={ <DashboardPage />}
+        />
+        <Route
+          path="/display-hub" element={<DisplayHubPage />
           }
         />
         <Route
-          path="/display-hub" element={<ProtectedRoute> <DisplayHubPage /> </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/display/:screenId" element={<ProtectedRoute> {/* <TVOutputPage /> */} </ProtectedRoute>
+          path="/display/:screenId"
+          element={
+            <TVOutputPage />
           }
         />
         <Route

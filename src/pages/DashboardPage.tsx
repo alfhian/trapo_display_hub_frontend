@@ -73,10 +73,10 @@ function DashboardPage() {
       <Sidebar isHovered={isSidebarHovered} setIsHovered={setIsSidebarHovered} />
       <main className="flex-1 px-4 sm:px-8 md:px-12 py-8 md:py-12 max-h-screen overflow-y-auto transition-all duration-300">
         <Navbar title="Dashboard" />
-        <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-x-10 gap-y-5">
+        <div className="mt-1 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-x-10 gap-y-1">
           {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="space-y-5">
-              <div className="bg-white rounded-4xl shadow-sm hover:shadow-md transition-all duration-300 p-4 sm:p-8">
+            <div key={i} className="space-y-0">
+              <div className="border-transparent p-4 sm:p-8">
                 <Card
                   number={i + 1}
                   status={cards[i]?.status === 'Active' ? 'Active' : 'Inactive'}

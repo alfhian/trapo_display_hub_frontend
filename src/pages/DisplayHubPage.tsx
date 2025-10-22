@@ -7,7 +7,7 @@ import Navbar from '../components/Navbar'
 import Sidebar from '../components/Sidebar'
 import 'sweetalert2/dist/sweetalert2.min.css'
 
-// ✅ 1. IMPOR DARI FILE KONFIGURASI & UTILITAS
+// IMPOR DARI FILE KONFIGURASI & UTILITAS
 import { getServices } from '../config/services'
 import { getEstimatedFinishDate } from '../utils/timeUtils'
 
@@ -19,11 +19,21 @@ type CardData = {
   licensePlate: string
   status: string
   time: string
+  screenId?: string // Tambahkan screenId ke tipe data
 } | null
+
+// Mapping dari index frontend ke ID TV di backend
+const TV_ID_MAPPING = {
+  0: "00000000-0000-0000-0000-000000000001",
+  1: "00000000-0000-0000-0000-000000000002",
+  2: "00000000-0000-0000-0000-000000000003",
+  3: "00000000-0000-0000-0000-000000000004"
+};
 
 function DisplayHubPage() {
   const [cards, setCards] = useState<CardData[]>([null, null, null, null])
   const [isSidebarHovered, setIsSidebarHovered] = useState(false)
+  const [isLoading, setIsLoading] = useState<{ [key: number]: boolean }>({})
 
   useEffect(() => {
     const stored = localStorage.getItem('dashboardSlots')
@@ -35,18 +45,95 @@ function DisplayHubPage() {
     localStorage.setItem('dashboardSlots', JSON.stringify(updated))
   }
 
-  const handleDisplay = (
+  const handleDisplay = async (
     index: number,
     formData: { customerName: string; brand: string; carType: string; service: string; licensePlate: string }
   ) => {
-    // ✅ 2. GUNAKAN FUNSI UTILITAS BARU DAN FORMAT HASILNYA
-    const estimatedDate = getEstimatedFinishDate(formData.service)
-    const updated = [...cards]
-    updated[index] = { ...formData, status: 'Active', time: estimatedDate.toLocaleString() }
-    updateStorage(updated)
+    // Set loading state untuk tombol yang diklik
+    setIsLoading(prev => ({ ...prev, [index]: true }))
+    
+    try {
+      // Dapatkan ID TV berdasarkan index
+      const tvId = TV_ID_MAPPING[index as keyof typeof TV_ID_MAPPING];
+
+      // Perbaikan: Gunakan backtick untuk template literal
+      console.log(`[DEBUG] Mencoba mengirim ke TV Index: ${index}, dengan Backend ID: ${tvId}`);
+      
+      // Periksa apakah token tersedia
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Authentication token not found. Please login again.');
+      }
+
+      // Siapkan data untuk dikirim ke backend
+      const requestData = {
+        customerName: formData.customerName,
+        brand: formData.brand,
+        carType: formData.carType,
+        service: formData.service,
+        licensePlate: formData.licensePlate,
+        screenId: tvId
+      };
+      
+      console.log('[DEBUG] Data yang akan dikirim:', requestData);
+      
+      // Kirim data ke backend
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/screens/${tvId}/assign`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` // Gunakan token yang sudah diperiksa
+        },
+        body: JSON.stringify(requestData)
+      });
+      
+      console.log('[DEBUG] Response status:', response.status);
+      
+      const data = await response.json();
+      console.log('[DEBUG] Response data:', data);
+      
+      if (response.ok) {
+        // Jika berhasil, update local state dan localStorage
+        const estimatedDate = getEstimatedFinishDate(formData.service)
+        const updated = [...cards]
+        updated[index] = { 
+          ...formData, 
+          status: 'Active', 
+          time: estimatedDate.toLocaleString(),
+          screenId: tvId // Gunakan screenId yang konsisten
+        }
+        updateStorage(updated)
+        
+        // Tampilkan notifikasi sukses
+        Swal.fire({
+          icon: 'success',
+          title: 'Success!',
+          text: 'Customer data has been sent to TV display.',
+          timer: 2000,
+          showConfirmButton: false,
+        });
+      } else {
+        // Tampilkan pesan error dari backend
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: data.message || 'Failed to send data to TV display.',
+        });
+      }
+    } catch (error) {
+      console.error('Error sending data to TV:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: `An error occurred: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      });
+    } finally {
+      // Reset loading state
+      setIsLoading(prev => ({ ...prev, [index]: false }))
+    }
   }
 
-  // ✅ Ganti handleRemove dengan SweetAlert2 konfirmasi
+  // Ganti handleRemove dengan SweetAlert2 konfirmasi
   const handleRemove = async (index: number) => {
     const result = await Swal.fire({
       title: 'Are you sure?',
@@ -129,6 +216,7 @@ function DisplayHubPage() {
                 initialData={card}
                 onDisplay={handleDisplay}
                 onRemove={handleRemove}
+                isLoading={isLoading[index] || false}
               />
             </div>
           ))}
@@ -143,11 +231,13 @@ function FormCard({
   initialData,
   onDisplay,
   onRemove,
+  isLoading
 }: {
   index: number
   initialData: CardData
   onDisplay: (index: number, formData: { customerName: string; brand: string; carType: string; service: string; licensePlate: string }) => void
   onRemove: (index: number) => void
+  isLoading: boolean
 }) {
   const [form, setForm] = useState({
     customerName: initialData?.customerName || '',
@@ -157,7 +247,7 @@ function FormCard({
     licensePlate: initialData?.licensePlate || '',
   })
 
-  // ✅ 3. TAMBAHKAN STATE UNTUK MENYIMPAN DAFTAR LAYANAN
+  // TAMBAHKAN STATE UNTUK MENYIMPAN DAFTAR LAYANAN
   const [services, setServices] = useState(getServices);
 
   useEffect(() => {
@@ -175,7 +265,7 @@ function FormCard({
   }, [initialData])
 
   const isActive = !!initialData
-  // ✅ 4. GUNAKAN FUNSI UTILITAS BARU UNTUK MENGHITUNG ESTIMASI
+  // GUNAKAN FUNSI UTILITAS BARU UNTUK MENGHITUNG ESTIMASI
   const estimatedTime = form.service ? getEstimatedFinishDate(form.service).toLocaleString() : '-'
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -213,7 +303,7 @@ function FormCard({
                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                 : 'border-gray-300 hover:border-blue-400 focus:border-blue-500 focus:ring focus:ring-blue-100'
             }`}
-            disabled={isActive}
+            disabled={isActive || isLoading}
             required
           />
         </div>
@@ -231,7 +321,7 @@ function FormCard({
               ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
               : 'border-gray-300 hover:border-blue-400 focus:border-blue-500 focus:ring focus:ring-blue-100'
           }`}
-           disabled={isActive}
+           disabled={isActive || isLoading}
           required
         />
       </div>
@@ -247,11 +337,11 @@ function FormCard({
               ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
               : 'border-gray-300 hover:border-blue-400 focus:border-blue-500 focus:ring focus:ring-blue-100'
           }`}
-          disabled={isActive}
+          disabled={isActive || isLoading}
           required
         >
           <option value="">Pilih layanan</option>
-          {/* ✅ 5. MAP DARI STATE services YANG SUDAH DIPERBAHARUI */}
+          {/* MAP DARI STATE services YANG SUDAH DIPERBAHARUI */}
           {services.map((service) => (
             <option key={service.value} value={service.value}>
               {service.label}
@@ -270,17 +360,40 @@ function FormCard({
         />
       </div>
 
-      <div className="flex justify-end">
+      <div className="flex justify-between items-center">
         <button
           type="submit"
           className={`mt-5 px-8 sm:px-10 py-2.5 rounded-full text-sm sm:text-base font-semibold text-white transition-all duration-300 shadow-sm ${
             isActive
               ? 'bg-[#f68b8b] hover:bg-[#f57b7b]'
               : 'bg-[#7883ff] hover:bg-[#6a73e6]'
-          }`}
+          } ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+          disabled={isLoading}
         >
-          {isActive ? 'Remove' : 'Display'}
+          {isLoading ? (
+            <span className="flex items-center">
+              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Processing...
+            </span>
+          ) : (
+            isActive ? 'Remove' : 'Display'
+          )}
         </button>
+
+        {/* Tombol View on TV (hanya muncul jika aktif) */}
+        {isActive && (
+          <a
+            href={`/display/${initialData?.screenId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-5 px-8 sm:px-10 py-2.5 rounded-full text-sm sm:text-base font-semibold text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 transition-all duration-300 shadow-sm"
+          >
+            View on TV
+          </a>
+        )}
       </div>
     </form>
   )

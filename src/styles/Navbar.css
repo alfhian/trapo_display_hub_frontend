@@ -1,0 +1,137 @@
+/* --- Animasi Mobil Polisi --- */
+@keyframes drive {
+  0% { 
+    left: -60px; 
+    opacity: 0;
+  }
+  5% {
+    opacity: 1;
+  }
+  95% {
+    opacity: 1;
+  }
+  100% { 
+    left: calc(100% + 60px); 
+    opacity: 0;
+  }
+}
+
+/* --- Animasi Mobil Maling (sedikit lebih lambat) --- */
+@keyframes drive-slow {
+  0% { 
+    left: -60px; 
+    opacity: 0;
+  }
+  5% {
+    opacity: 1;
+  }
+  95% {
+    opacity: 1;
+  }
+  100% { 
+    left: calc(100% + 60px); 
+    opacity: 0;
+  }
+}
+
+/* --- Style Umum untuk Kontainer Mobil --- */
+.car-animation, .car-animation-2 {
+  position: absolute;
+  bottom: 0px;
+  transform: rotate(0deg);
+  z-index: 5;
+}
+
+/* --- Mobil Polisi --- */
+.car-animation {
+  animation: drive 12s linear infinite;
+}
+
+/* --- Mobil Maling (dimulai lebih dulu) --- */
+.car-animation-2 {
+  animation: drive-slow 14s linear infinite;
+  animation-delay: -4s; /* Mulai 4 detik lebih awal */
+}
+
+/* --- Style Ikon Mobil --- */
+.car-icon {
+  font-size: 1.9rem;
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,0.2));
+}
+
+.police-icon {
+  color: #3847d1; /* Warna polisi */
+}
+
+.thief-icon {
+  color: #7e806b; /* Warna abu-abu untuk mobil maling */
+}
+
+/* --- Efek Lampu Sirine (Hanya untuk Mobil Polisi) --- */
+.car-animation::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 100%;
+  transform: translateY(-45%);
+  width: 240px;
+  height: 40px;
+  clip-path: polygon(0 40%, 100% 0, 100% 100%, 0 60%);
+  animation: siren-light 0.6s infinite;
+}
+
+/* Animasi warna sirine polisi */
+@keyframes siren-light {
+  0%, 100% {
+    background: radial-gradient(
+      ellipse at left center, 
+      rgba(239, 68, 68, 0.9) 0%, 
+      rgba(239, 68, 68, 0.5) 40%, 
+      transparent 70%
+    );
+  }
+  50% {
+    background: radial-gradient(
+      ellipse at left center, 
+      rgba(59, 130, 246, 0.9) 0%, 
+      rgba(59, 130, 246, 0.5) 40%, 
+      transparent 70%
+    );
+  }
+}
+
+/* --- Style Umum untuk Jejak Mobil --- */
+.car-trail, .car-trail-2 {
+  position: absolute;
+  bottom: 0;
+  height: 2px;
+  z-index: 4;
+}
+
+/* --- Jejak Mobil Polisi --- */
+.car-trail {
+  background: linear-gradient(to right, transparent, rgba(69, 243, 255, 0.7), transparent);
+  animation: trail 12s linear infinite;
+}
+
+/* --- Jejak Mobil Maling --- */
+.car-trail-2 {
+  background: linear-gradient(to right, transparent, rgba(156, 163, 175, 0.5), transparent);
+  animation: trail-slow 14s linear infinite;
+  animation-delay: -4s; /* Sinkron dengan mobil maling */
+}
+
+/* --- Animasi Jejak --- */
+@keyframes trail {
+  0% { left: -60px; width: 0; opacity: 0.6; }
+  10% { width: 80px; opacity: 0.4; }
+  90% { width: 200px; opacity: 0.1; }
+  100% { left: calc(100% + 60px); width: 0; opacity: 0; }
+}
+
+@keyframes trail-slow {
+  0% { left: -60px; width: 0; opacity: 0.6; }
+  10% { width: 80px; opacity: 0.4; }
+  90% { width: 200px; opacity: 0.1; }
+  100% { left: calc(100% + 60px); width: 0; opacity: 0; }
+}
