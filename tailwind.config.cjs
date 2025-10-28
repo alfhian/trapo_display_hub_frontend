@@ -8,6 +8,9 @@ module.exports = {
   theme: {
     extend: {
       keyframes: {
+        fontFamily: {
+          sans: ['Poppins', 'sans-serif'], // jadikan Poppins default
+        },
         fadeIn: {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' },

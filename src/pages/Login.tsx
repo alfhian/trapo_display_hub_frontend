@@ -21,7 +21,7 @@ const Login = () => {
 
     setIsLoading(true);
 
-    /*
+    
     try {
       const response = await fetch(import.meta.env.VITE_BACKEND_URL+'/auth/login', {
         method: 'POST',
@@ -83,7 +83,7 @@ const Login = () => {
     } finally {
       setIsLoading(false);
     }
-      */
+      
   };
 
   return (

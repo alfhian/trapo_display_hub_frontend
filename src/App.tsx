@@ -21,7 +21,7 @@ function App() {
         {/* Protected Routes (Hanya bisa diakses kalau sudah login) */}
         /* ProtectedRoute */
         <Route
-          path="/dashboard" element={ <DashboardPage />}
+          path="/dashboard" element={<ProtectedRoute> <DashboardPage /> </ProtectedRoute>}
         />
         <Route
           path="/display-hub" element={<DisplayHubPage />

@@ -1,93 +1,111 @@
 import { useEffect, useState } from 'react'
-import Navbar from '../components/Navbar'
 import Sidebar from '../components/Sidebar'
-import Card from '../components/Card'
-import TVDisplayCard from '../components/TVDisplayCard'
+import Navbar from '../components/Navbar'
 import Swal from 'sweetalert2'
+import axios from 'axios'
 import 'sweetalert2/dist/sweetalert2.min.css'
 
-type CardData = {
-  customerName: string
-  brand: string
-  carType: string
-  service: string
-  licensePlate: string
-  status: string
-  time: string
-} | null
-
 function DashboardPage() {
-  const [cards, setCards] = useState<CardData[]>([null, null, null, null])
-  const [isSidebarHovered, setIsSidebarHovered] = useState(false)
+  const [cards, setCards] = useState<Array<{
+    customerName: String,
+    brand: String,
+    carType: String,
+    service: String,
+    licensePlate: String,
+    time: String,
+    status: String
+  } | null>>([null, null, null, null])
 
-  useEffect(() => {
-    const stored = localStorage.getItem('dashboardSlots')
-    if (stored) setCards(JSON.parse(stored))
-  }, [])
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState(true)
 
-  const updateStorage = (updated: CardData[]) => {
-    setCards(updated)
-    localStorage.setItem('dashboardSlots', JSON.stringify(updated))
-  }
-
-  const handleRemoveFromDisplay = async (index: number) => {
-    const result = await Swal.fire({
-      title: 'Are you sure?',
-      text: 'This will clear the display and remove all customer data from this slot.',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Yes, Remove',
-      cancelButtonText: 'Cancel',
-      reverseButtons: true,
-      confirmButtonColor: '#f68b8b',
-      cancelButtonColor: '#d3d3d3',
-      background: '#fff',
-      color: '#333',
-      backdrop: 'rgba(0, 0, 0, 0.25)',
-      customClass: {
-        popup: 'rounded-2xl shadow-lg',
-        title: 'text-lg font-semibold text-gray-800',
-        confirmButton: 'rounded-full px-5 py-2 font-medium',
-        cancelButton: 'rounded-full px-5 py-2 font-medium',
-      },
-    })
-
-    if (result.isConfirmed) {
-      const updated = [...cards]
-      updated[index] = null
-      updateStorage(updated)
-      Swal.fire({
-        title: 'Removed!',
-        text: 'The display slot has been cleared.',
-        icon: 'success',
-        timer: 1300,
-        showConfirmButton: false,
-        background: '#fff',
-        color: '#333',
-      })
+  const fetchData = async () => {
+    try {
+      const res = await axios(import.meta.env.VITE_BACKEND_URL+'/screens', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+        }
+      });
+      const data = res.data;
+      setCards(data)
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error)
     }
   }
 
- return (
-    <div className="flex min-h-screen bg-[#f5f5f5]">
-      <Sidebar isHovered={isSidebarHovered} setIsHovered={setIsSidebarHovered} />
-      <main className="flex-1 px-4 sm:px-8 md:px-12 py-8 md:py-12 max-h-screen overflow-y-auto transition-all duration-300">
+  useEffect(() => {
+    const token = localStorage.getItem('token')
+    fetchData();
+  }, [])
+
+  
+
+  const handleRemoveFromDisplay = async (index: number) => {
+    const result = await Swal.fire({
+      title: 'Hapus Slot?',
+      text: 'Data pelanggan akan dihapus.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Ya',
+      cancelButtonText: 'Batal',
+      confirmButtonColor: '#3847D1',
+      background: '#fff',
+    })
+    if (result.isConfirmed) {
+      const updated = [...cards]
+      updated[index] = null
+      Swal.fire({ title: 'Dihapus', icon: 'success', timer: 1000, showConfirmButton: false })
+    }
+  }
+
+  return (
+    <div className="flex min-h-screen bg-gray-50">
+      <Sidebar isExpanded={isSidebarExpanded} setIsExpanded={setIsSidebarExpanded} />
+
+      <main className="flex-1 overflow-y-auto">
         <Navbar title="Dashboard" />
-        <div className="mt-1 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-x-10 gap-y-1">
+        <div className="px-6 py-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-6">
           {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="space-y-0">
-              <div className="border-transparent p-4 sm:p-8">
-                <Card
-                  number={i + 1}
-                  status={cards[i]?.status === 'Active' ? 'Active' : 'Inactive'}
-                  date={cards[i]?.time || '-'}
-                />
+            <div key={i} className="rounded-lg border border-gray-200 bg-white shadow-sm p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-gray-700">
+                  Slot {i + 1}
+                </h3>
+                <span
+                  className={`text-xs font-medium px-2 py-1 rounded-full ${
+                    cards[i]?.status === 'Active'
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-gray-100 text-gray-500'
+                  }`}
+                >
+                  {cards[i]?.status === 'Active' ? 'Active' : 'Inactive'}
+                </span>
               </div>
-              <TVDisplayCard 
-                data={cards[i]} 
-                index={i} 
-                onRemove={handleRemoveFromDisplay}
-              />
+
+              {/* Customer Info */}
+              {cards[i] ? (
+                <div className="text-sm text-gray-700 space-y-1">
+                  <p>{cards[i]?.customerName}</p>
+                  <p>{cards[i]?.brand} – {cards[i]?.carType}</p>
+                  <p className="text-gray-500 text-xs">{cards[i]?.service}</p>
+                  <p className="text-gray-500 text-xs">{cards[i]?.licensePlate}</p>
+                  <p className="text-[11px] text-gray-400 mt-2">Updated: {cards[i]?.time}</p>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-400 italic">No data assigned.</p>
+              )}
+
+              {/* Remove Button */}
+              <div className="text-right mt-3">
+                <button
+                  onClick={() => handleRemoveFromDisplay(i)}
+                  className="text-xs text-red-500 hover:text-red-600"
+                >
+                  Clear Slot
+                </button>
+              </div>
             </div>
           ))}
         </div>
