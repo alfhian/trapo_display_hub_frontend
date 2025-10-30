@@ -20,16 +20,26 @@ function DashboardPage() {
 
   const fetchData = async () => {
     try {
-      const res = await axios(import.meta.env.VITE_BACKEND_URL+'/screens', {
+      const token = localStorage.getItem('token');
+
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/screens`, {
+        method: 'GET',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest',
-        }
+        },
+        credentials: 'include', // kalau backend pakai cookie/session
       });
-      const data = res.data;
-      setCards(data)
+
+      // kalau backend balas error status (misal 401/403)
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`HTTP ${res.status} - ${errText}`);
+      }
+
+      const data = await res.json();
+      setCards(data);
     } catch (error) {
       console.error('Error fetching dashboard data:', error)
     }
