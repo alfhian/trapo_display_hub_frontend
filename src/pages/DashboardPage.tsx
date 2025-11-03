@@ -4,29 +4,34 @@ import Navbar from '../components/Navbar'
 import Swal from 'sweetalert2'
 import TVDisplayCard from '../components/TVDisplayCard'
 import 'sweetalert2/dist/sweetalert2.min.css'
+import socket from '../socket'
+
+console.log('🌍 Connecting to socket server:', import.meta.env.VITE_BACKEND_URL)
+
 
 type ScreenData = {
-  id?: string
-  customer_name?: string
-  brand?: string
-  type?: string
-  license_plate?: string
-  year?: string
-  etc?: string
-  service?: string
-  updated_at?: string
-  status?: string
+  id: string
+  screen_id: string
+  customer_name: string | null
+  brand: string | null
+  type: string | null
+  license_plate: string | null
+  year: string | null
+  estimated_time: string | null
+  service: string | null
+  updated_at: string | null
+  status: 'Active' | 'Inactive'
 } | null
 
-function DashboardPage() {
+export default function DashboardPage() {
   const [cards, setCards] = useState<ScreenData[]>([null, null, null, null])
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(true)
 
+  // ✅ Fetch data awal
   const fetchData = async () => {
     try {
       const token = localStorage.getItem('token')
-      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/screens`, {
-        method: 'GET',
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/screens`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -37,43 +42,102 @@ function DashboardPage() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
 
-      // mapping 4 slot; kalau tidak ada display_number, isi urutan biasa
+      // mapping 4 slot berdasarkan display_number
       const mapped = [null, null, null, null]
-      data.forEach((screen: any, index: number) => {
-        const idx = screen.display_number ? screen.display_number - 1 : index
-        if (idx >= 0 && idx < 4) {
-          mapped[idx] = {
-            id: screen.id,
-            customer_name: screen.customer_name || '',
-            brand: screen.brand || '',
-            type: screen.type || '',
-            license_plate: screen.license_plate || '',
-            year: screen.year || '',
-            etc: screen.etc || '',
-            service: screen.service || '',
-            updated_at: screen.updated_at || '',
-            status: screen.customer_name ? 'Active' : 'Inactive',
+        data.forEach((screen: any, index: number) => {
+          const idx = screen.display_number ? screen.display_number - 1 : index
+          if (idx >= 0 && idx < 4) {
+            mapped[idx] = {
+              id: screen.id, // id dari screen_display
+              screen_id: screen.screen_id, // ✅ tambahkan ini agar cocok dengan payload socket
+              customer_name: screen.customer_name || '',
+              brand: screen.brand || '',
+              type: screen.type || '',
+              license_plate: screen.license_plate || '',
+              year: screen.year || '',
+              estimated_time: screen.estimated_time || '',
+              service: screen.service || '',
+              status: screen.customer_name ? 'Active' : 'Inactive',
+            }
           }
-        }
-      })
-
-      setCards(mapped)
+        })
+        setCards(mapped)
     } catch (error) {
-      console.error('Error fetching dashboard data:', error)
+      console.error('❌ Error fetching dashboard data:', error)
     }
   }
 
+  // ✅ Socket & fetch lifecycle
   useEffect(() => {
     fetchData()
+
+    console.log('📡 Dashboard mounted')
+
+    socket.emit('join_screen', '00000000-0000-0000-0000-000000000001')
+    socket.emit('join_screen', '00000000-0000-0000-0000-000000000002')
+    socket.emit('join_screen', '00000000-0000-0000-0000-000000000003')
+    socket.emit('join_screen', '00000000-0000-0000-0000-000000000004')
+
+    socket.on('screen:update', ({ screen_id, payload }) => {
+      console.log('📡 [Realtime Update] screen_id:', screen_id, payload)
+
+      setCards((prev) => {
+        const updated = [...prev]
+        const idx = prev.findIndex((c) => c?.screen_id === screen_id)
+
+        if (idx !== -1) {
+          // ✅ Jika data baru aktif, isi slot
+          if (payload.is_active) {
+            updated[idx] = {
+              screen_id,
+              id: payload.id,
+              customer_name: payload.customer_name,
+              brand: payload.brand,
+              type: payload.type,
+              license_plate: payload.license_plate,
+              year: payload.year,
+              service: payload.service,
+              estimated_time: payload.estimated_time,
+            }
+          } else {
+            // ❌ Jika dihapus, kosongkan field saja (bukan null)
+            updated[idx] = {
+              screen_id,
+              id: null,
+              customer_name: null,
+              brand: null,
+              type: null,
+              license_plate: null,
+              year: null,
+              service: null,
+              estimated_time: null,
+            }
+          }
+        }
+
+        return updated
+      })
+    })
+
+    socket.onAny((event, ...args) => {
+      console.log('🛰️ Received socket event:', event, args)
+    })
+
+    return () => {
+      console.log('🧹 Cleaning socket listeners')
+      socket.off('screen:update')
+      socket.offAny()
+    }
   }, [])
 
+  // ✅ Remove display (mark inactive)
   const handleRemoveFromDisplay = async (index: number) => {
     const screen = cards[index]
     if (!screen?.id) return
 
-    const result = await Swal.fire({
+    const confirm = await Swal.fire({
       title: 'Hapus Slot?',
-      text: 'Data pelanggan akan dihapus dari display ini.',
+      text: 'Data pelanggan akan dinonaktifkan dari display ini.',
       icon: 'warning',
       showCancelButton: true,
       confirmButtonText: 'Ya, Hapus',
@@ -82,40 +146,33 @@ function DashboardPage() {
       background: '#fff',
     })
 
-    if (!result.isConfirmed) return
+    if (!confirm.isConfirmed) return
 
     try {
       const token = localStorage.getItem('token')
-      await fetch(`${import.meta.env.VITE_BACKEND_URL}/screens/${screen.id}/assign`, {
-        method: 'POST',
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/screens/${screen.id}/remove`, {
+        method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          customer_name: '',
-          brand: '',
-          type: '',
-          license_plate: '',
-          year: '',
-          service: '',
-        }),
       })
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
 
       Swal.fire({
         title: 'Dihapus!',
-        text: 'Slot berhasil dikosongkan.',
+        text: 'Slot berhasil dinonaktifkan.',
         icon: 'success',
-        timer: 1000,
+        timer: 1200,
         showConfirmButton: false,
       })
-
-      fetchData()
     } catch (err) {
+      console.error('❌ Gagal menghapus slot:', err)
       Swal.fire({
         icon: 'error',
         title: 'Gagal Menghapus',
-        text: 'Tidak dapat menghapus data slot.',
+        text: 'Tidak dapat menonaktifkan display slot.',
       })
     }
   }
@@ -125,7 +182,7 @@ function DashboardPage() {
       <Sidebar isExpanded={isSidebarExpanded} setIsExpanded={setIsSidebarExpanded} />
 
       <main className="flex-1 overflow-y-auto">
-        <Navbar title="Dashboard" />
+        <Navbar title="Dashboard (Realtime)" />
 
         <div className="px-6 py-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-8">
           {cards.map((card, i) => (
@@ -134,30 +191,29 @@ function DashboardPage() {
                 <h3 className="text-sm font-semibold text-gray-700">Slot {i + 1}</h3>
                 <span
                   className={`text-xs font-medium px-2 py-1 rounded-full ${
-                    card?.status === 'Active'
+                    card?.customer_name
                       ? 'bg-green-100 text-green-700'
                       : 'bg-gray-100 text-gray-500'
                   }`}
                 >
-                  {card?.status === 'Active' ? 'Active' : 'Inactive'}
+                  {card?.customer_name ? 'Active' : 'Inactive'}
                 </span>
               </div>
 
               <TVDisplayCard
                 data={
-                  card
-                    ? {
-                        customerName: card.customer_name || '',
-                        brand: card.brand || '',
-                        carType: card.type || '',
-                        service: card.service || '',
-                        licensePlate: card.license_plate || '',
-                        time: card.updated_at || '-',
-                        status: card.status || 'Inactive',
-                        year: card.year || '',
-                        etc: card.etc || '',
+                  card && card.customer_name
+                    ? card
+                    : {
+                        customer_name: '',
+                        brand: '',
+                        type: '',
+                        service: '',
+                        license_plate: '',
+                        status: 'Inactive',
+                        year: '',
+                        estimated_time: '',
                       }
-                    : null
                 }
                 index={i}
                 onRemove={handleRemoveFromDisplay}
@@ -169,5 +225,3 @@ function DashboardPage() {
     </div>
   )
 }
-
-export default DashboardPage

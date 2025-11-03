@@ -6,6 +6,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import DashboardPage from "./pages/DashboardPage";
 import DisplayHubPage from "./pages/DisplayHubPage";
+import DisplayScreenPage from './pages/DisplayScreenPage'
 import SettingsPage from "./pages/SettingsPage";
 import './styles/Navbar.css';
 import { Tv } from "lucide-react";
@@ -27,12 +28,7 @@ function App() {
           path="/display-hub" element={<DisplayHubPage />
           }
         />
-        <Route
-          path="/display/:screenId"
-          element={
-            <TVOutputPage />
-          }
-        />
+        <Route path="/display/:id" element={<DisplayScreenPage />} />
         <Route
         path="/settings" element={<ProtectedRoute> <SettingsPage /> </ProtectedRoute>}
         />
