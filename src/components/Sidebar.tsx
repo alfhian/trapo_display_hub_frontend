@@ -78,12 +78,12 @@ const Sidebar = ({ onWidthChange }: SidebarProps) => {
 
         {/* 🔹 Bagian bawah (tetap di bawah) */}
         <div className="flex-shrink-0 border-t border-gray-700/40 px-3 pt-4 pb-6 space-y-2">
-          <SidebarLink
+          {/* <SidebarLink
             to="/settings"
             label="Settings"
             icon={<GoGear size={22} />}
             isExpanded={isExpanded}
-          />
+          /> */}
           <button onClick={handleLogout} className="w-full text-left">
             <SidebarItem
               label="Log Out"

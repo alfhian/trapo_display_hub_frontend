@@ -23,7 +23,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
         }
 
         // Coba ambil user dari token
-        const user = getUserFromToken(token);
+        const user = getUserFromToken();
         
         if (!user) {
           // Token tidak valid, hapus dari localStorage

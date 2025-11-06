@@ -51,7 +51,7 @@ function SettingsPage() {
 
   return (
     <div className="flex min-h-screen bg-[#f5f5f5]">
-      <Sidebar isHovered={isSidebarHovered} setIsHovered={setIsSidebarHovered} />
+      <Sidebar />
       
       <main className="flex-1 px-4 sm:px-8 md:px-12 py-8 md:py-12 max-h-screen overflow-y-auto transition-all duration-300">
         <Navbar title="Settings" />

@@ -94,6 +94,7 @@ export default function DisplayHubPage() {
         license_plate: form.licensePlate,
         service: form.service,
         estimated_time: estimatedTime,
+        status: 'Active',
       }
 
       const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/screens/${tvId}/assign`, {
@@ -227,7 +228,11 @@ function DisplayCard({
     e.preventDefault()
     if (!form.service) return alert('Please select a service.')
     if (isActive) await onRemove(index, resetForm)
-    else onDisplay(index, { ...form, estimatedTime })
+    else onDisplay(index, {
+      ...form, estimatedTime,
+      id: '',
+      screenId: ''
+    })
   }
 
   return (
