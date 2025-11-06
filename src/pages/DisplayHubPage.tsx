@@ -8,14 +8,16 @@ import { getServices } from '../config/services'
 import { getEstimatedFinishDate } from '../utils/timeUtils'
 
 export type ScreenPayload = {
-  id: string
-  customer_name: string | null
-  brand: string | null
-  type: string | null
-  year: string | null
-  license_plate: string | null
-  service: string | null
-  estimated_time: string | null
+  screen_id?: string
+  id?: string
+  customer_name: string
+  brand: string
+  type: string
+  year?: string | null
+  service: string
+  license_plate: string
+  estimated_time: string
+  status: 'Active' | 'Inactive' | string
 }
 
 export type CardData = {
@@ -28,7 +30,7 @@ export type CardData = {
   service: string
   licensePlate: string
   estimatedTime: string
-  status: 'Active' | 'Inactive'
+  status: 'Active' | 'Inactive' | string
   time: string
 }
 

@@ -1,3 +1,4 @@
+import React from 'react'
 import logoTrapo from '../assets/LOGO_TRAPO.png'
 import {
   GoGraph,
