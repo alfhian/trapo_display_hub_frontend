@@ -4,11 +4,9 @@ import Swal from 'sweetalert2'
 import Navbar from '../components/Navbar'
 import Sidebar from '../components/Sidebar'
 import 'sweetalert2/dist/sweetalert2.min.css'
-
 import { getServices } from '../config/services'
 import { getEstimatedFinishDate } from '../utils/timeUtils'
 
-/* ----------------------------- Type Definitions ----------------------------- */
 export type ScreenPayload = {
   id: string
   customer_name: string | null
@@ -34,47 +32,39 @@ export type CardData = {
   time: string
 }
 
-/* ----------------------------- Main Component ----------------------------- */
-/* ----------------------------- MAIN COMPONENT ----------------------------- */
-function DisplayHubPage() {
+export default function DisplayHubPage() {
   const [cards, setCards] = useState<CardData[]>([])
   const [isSidebarHovered, setIsSidebarHovered] = useState(false)
   const [isLoading, setIsLoading] = useState<Record<string, boolean>>({})
 
-  /* ----------------------------- Fetch Data ----------------------------- */
+  // 🔹 Fetch data awal
   const fetchScreens = async () => {
     try {
       const token = localStorage.getItem('token')
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/screens`, {
-        method: 'GET',
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
-          Accept: 'application/json',
         },
       })
-
-      if (!response.ok) throw new Error('Failed to fetch screen data.')
+      if (!response.ok) throw new Error('Failed to fetch screens')
       const data: ScreenPayload[] = await response.json()
 
-      // Map ke format CardData
-      const mappedCards: CardData[] = data.map((screen) => ({
-        id: screen.id,
-        screenId: screen.screen_id,
-        customerName: screen.customer_name ?? '',
-        brand: screen.brand ?? '',
-        carType: screen.type ?? '',
-        year: screen.year ?? '',
-        service: screen.service ?? '',
-        licensePlate: screen.license_plate ?? '',
-        estimatedTime: screen.estimated_time ?? '',
-        time: screen.estimated_time ?? '-',
-        status: screen.customer_name ? 'Active' : 'Inactive',
+      const mapped = data.map((s) => ({
+        id: s.id,
+        screenId: s.screen_id,
+        customerName: s.customer_name ?? '',
+        brand: s.brand ?? '',
+        carType: s.type ?? '',
+        year: s.year ?? '',
+        service: s.service ?? '',
+        licensePlate: s.license_plate ?? '',
+        estimatedTime: s.estimated_time ?? '',
+        time: s.estimated_time ?? '-',
+        status: s.customer_name ? 'Active' : 'Inactive',
       }))
-
-      setCards(mappedCards)
-    } catch (err) {
-      console.error('Error fetching screens:', err)
+      setCards(mapped)
+    } catch (e) {
       Swal.fire('Error', 'Failed to load display hub data.', 'error')
     }
   }
@@ -83,40 +73,34 @@ function DisplayHubPage() {
     fetchScreens()
   }, [])
 
-  /* ----------------------------- Assign Display ----------------------------- */
-  const handleDisplay = async (index: number, formData: Omit<CardData, 'status' | 'time'>) => {
+  // 🔹 Assign Display
+  const handleDisplay = async (index: number, form: Omit<CardData, 'status' | 'time'>) => {
     const tvId = cards[index]?.screenId
     if (!tvId) return
-
-    setIsLoading((prev) => ({ ...prev, [tvId]: true }))
+    setIsLoading((p) => ({ ...p, [tvId]: true }))
 
     try {
       const token = localStorage.getItem('token')
-      const estimatedDate = getEstimatedFinishDate(formData.service)
-      const estimatedTime = estimatedDate.toISOString()
+      const estimatedTime = getEstimatedFinishDate(form.service).toISOString()
 
       const payload: ScreenPayload = {
         id: tvId,
-        customer_name: formData.customerName,
-        brand: formData.brand,
-        type: formData.carType,
-        year: formData.year,
-        license_plate: formData.licensePlate,
-        service: formData.service,
+        customer_name: form.customerName,
+        brand: form.brand,
+        type: form.carType,
+        year: form.year,
+        license_plate: form.licensePlate,
+        service: form.service,
         estimated_time: estimatedTime,
       }
 
       const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/screens/${tvId}/assign`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(payload),
       })
 
-      if (!res.ok) throw new Error('Failed to send data to TV display.')
-
+      if (!res.ok) throw new Error('Failed to assign')
       Swal.fire({
         icon: 'success',
         title: 'Success!',
@@ -124,24 +108,22 @@ function DisplayHubPage() {
         timer: 1500,
         showConfirmButton: false,
       })
-
-      // Tidak fetch ulang; dashboard realtime akan auto update
       fetchScreens()
     } catch (err) {
-      Swal.fire('Error', err instanceof Error ? err.message : 'Unknown error.', 'error')
+      Swal.fire('Error', err instanceof Error ? err.message : 'Unknown error', 'error')
     } finally {
-      setIsLoading((prev) => ({ ...prev, [tvId]: false }))
+      setIsLoading((p) => ({ ...p, [tvId]: false }))
     }
   }
 
-  /* ----------------------------- REMOVE DISPLAY ----------------------------- */
-  const handleRemove = async (index: number) => {
+  // 🔹 Remove Display
+  const handleRemove = async (index: number, resetForm?: () => void) => {
     const tvId = cards[index]?.id
     if (!tvId) return
 
     const confirm = await Swal.fire({
       title: 'Remove Display?',
-      text: 'This will mark the display slot as inactive.',
+      text: 'This slot will be marked as inactive.',
       icon: 'warning',
       showCancelButton: true,
       confirmButtonText: 'Yes, Remove',
@@ -149,21 +131,15 @@ function DisplayHubPage() {
       reverseButtons: true,
       confirmButtonColor: '#f68b8b',
     })
-
     if (!confirm.isConfirmed) return
 
     try {
       const token = localStorage.getItem('token')
-
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/screens/${tvId}/remove`, {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/screens/${tvId}/remove`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       })
-
-      if (!response.ok) throw new Error(`Failed: ${response.status}`)
+      if (!res.ok) throw new Error('Failed')
 
       Swal.fire({
         icon: 'success',
@@ -173,34 +149,36 @@ function DisplayHubPage() {
         showConfirmButton: false,
       })
 
-      // Update state → status jadi Inactive
       setCards((prev) => {
         const updated = [...prev]
         updated[index] = { ...updated[index], status: 'Inactive' } as CardData
         return updated
       })
-    } catch (error) {
-      console.error('Remove display failed:', error)
-      Swal.fire('Error', 'Failed to deactivate display slot.', 'error')
+      resetForm?.()
+    } catch {
+      Swal.fire('Error', 'Failed to deactivate display.', 'error')
     }
   }
 
-  /* ----------------------------- Render ----------------------------- */
+  const [sidebarWidth, setSidebarWidth] = useState(256)
+
   return (
-    <div className="flex min-h-screen bg-[#f5f5f5]">
-      <Sidebar isHovered={isSidebarHovered} setIsHovered={setIsSidebarHovered} />
+    <div className="min-h-screen bg-gray-50">
+      <Sidebar onWidthChange={setSidebarWidth} />
 
-      <main className="flex-1 px-4 sm:px-8 md:px-12 py-8 md:py-12 overflow-y-auto">
-        <Navbar title="Display Hub" />
-
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+      <main
+        className="transition-all duration-300 overflow-y-auto"
+        style={{ marginLeft: `${sidebarWidth}px` }}
+      >
+        <Navbar title="Display Hub (Management)" />
+        <div className="px-6 py-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-8">
           {cards.map((card, index) => (
             <DisplayCard
               key={card.screenId}
               index={index}
               card={card}
               onDisplay={handleDisplay}
-              onRemove={(i) => handleRemove(i, () => resetForm(i))}
+              onRemove={handleRemove}
               isLoading={!!isLoading[card.screenId]}
             />
           ))}
@@ -208,9 +186,10 @@ function DisplayHubPage() {
       </main>
     </div>
   )
+
 }
 
-/* ----------------------------- Subcomponent: DisplayCard ----------------------------- */
+/* ----------------------------- Subcomponent ----------------------------- */
 function DisplayCard({
   index,
   card,
@@ -220,8 +199,8 @@ function DisplayCard({
 }: {
   index: number
   card: CardData
-  onDisplay: (index: number, formData: Omit<CardData, 'status' | 'time'>) => void
-  onRemove: (index: number) => void
+  onDisplay: (index: number, form: Omit<CardData, 'status' | 'time'>) => void
+  onRemove: (index: number, resetForm?: () => void) => void
   isLoading: boolean
 }) {
   const [form, setForm] = useState({
@@ -232,17 +211,6 @@ function DisplayCard({
     service: card.service,
     licensePlate: card.licensePlate,
   })
-
-  const resetForm = () =>
-    setForm({
-      customerName: '',
-      brand: '',
-      carType: '',
-      year: '',
-      service: '',
-      licensePlate: '',
-    })
-
   const services = getServices()
   const isActive = card.status === 'Active'
   const estimatedTime = form.service ? getEstimatedFinishDate(form.service).toLocaleString() : '-'
@@ -250,87 +218,66 @@ function DisplayCard({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm({ ...form, [e.target.name]: e.target.value })
 
+  const resetForm = () =>
+    setForm({ customerName: '', brand: '', carType: '', year: '', service: '', licensePlate: '' })
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!form.service) return alert('Please select a service first.')
-
-    if (isActive) {
-      await onRemove(index) // tunggu selesai
-      resetForm() // 🔥 langsung clear form
-    } else {
-      onDisplay(index, { ...form, estimatedTime })
-    }
+    if (!form.service) return alert('Please select a service.')
+    if (isActive) await onRemove(index, resetForm)
+    else onDisplay(index, { ...form, estimatedTime })
   }
 
   return (
-    <div className="bg-white rounded-3xl shadow-sm hover:shadow-md transition-all duration-300 p-6 sm:p-8">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <div className="h-14 w-14 rounded-full bg-gray-200 flex items-center justify-center text-lg sm:text-xl font-bold text-gray-700">
-          {index + 1}
-        </div>
-
-        <div className="flex items-center gap-2">
-          {isActive ? (
-            <>
-              <CheckCircle className="text-green-500 h-5 w-5 sm:h-6 sm:w-6" />
-              <span className="text-green-600 font-semibold text-sm sm:text-base">Active</span>
-            </>
-          ) : (
-            <>
-              <XCircle className="text-red-400 h-5 w-5 sm:h-6 sm:w-6" />
-              <span className="text-red-500 font-semibold text-sm sm:text-base">Inactive</span>
-            </>
-          )}
-        </div>
+    <div className="rounded-xl bg-white shadow-sm hover:shadow-md transition-all duration-300 p-6 flex flex-col items-center">
+      <div className="flex items-center justify-between w-full mb-4">
+        <h3 className="text-sm font-semibold text-gray-700">Slot {index + 1}</h3>
+        <span
+          className={`text-xs font-medium px-2 py-1 rounded-full ${
+            isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+          }`}
+        >
+          {isActive ? 'Active' : 'Inactive'}
+        </span>
       </div>
 
-      {/* Form */}
-      <form onSubmit={handleSubmit} className="space-y-3 text-sm text-gray-700">
-        {[ 
+      <form onSubmit={handleSubmit} className="w-full space-y-2">
+        {[
           { label: 'Customer Name', name: 'customerName' },
           { label: 'Car Brand', name: 'brand' },
           { label: 'Type', name: 'carType' },
           { label: 'Year', name: 'year' },
-        ].map((field) => (
+          { label: 'License Plate', name: 'licensePlate' },
+        ].map((f) => (
           <InputField
-            key={field.name}
-            label={field.label}
-            name={field.name}
-            value={form[field.name as keyof typeof form]}
+            key={f.name}
+            label={f.label}
+            name={f.name}
+            value={form[f.name as keyof typeof form]}
             onChange={handleChange}
             disabled={isActive || isLoading}
           />
         ))}
-
-        <InputField
-          label="License Plate"
-          name="licensePlate"
-          value={form.licensePlate}
-          onChange={handleChange}
-          disabled={isActive || isLoading}
-        />
 
         <SelectField
           label="Service"
           name="service"
           value={form.service}
           onChange={handleChange}
-          options={getServices().map((s) => ({ label: s.label, value: s.value }))}
+          options={services.map((s) => ({ label: s.label, value: s.value }))}
           disabled={isActive || isLoading}
         />
 
         <InputField label="Estimated Time" value={estimatedTime} disabled readOnly />
 
-        {/* Buttons */}
         <div className="flex justify-between items-center pt-3">
           <button
             type="submit"
             disabled={isLoading}
-            className={`px-8 sm:px-10 py-2.5 rounded-full font-semibold text-white transition-all duration-300 shadow-sm ${
+            className={`px-8 py-2.5 rounded-full font-semibold text-white transition-all duration-300 shadow-sm ${
               isActive
                 ? 'bg-[#f68b8b] hover:bg-[#f57b7b]'
-                : 'bg-[#7883ff] hover:bg-[#6a73e6]'
+                : 'bg-[#3847D1] hover:bg-[#2e3ab8]'
             } ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
           >
             {isLoading ? 'Processing...' : isActive ? 'Remove' : 'Display'}
@@ -341,7 +288,7 @@ function DisplayCard({
               href={`/display/${card.screenId}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="px-8 sm:px-10 py-2.5 rounded-full text-sm font-semibold text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 transition-all duration-300 shadow-sm"
+              className="px-8 py-2.5 rounded-full text-sm font-semibold text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 transition-all duration-300 shadow-sm"
             >
               View on TV
             </a>
@@ -352,7 +299,6 @@ function DisplayCard({
   )
 }
 
-/* ----------------------------- Reusable UI Components ----------------------------- */
 function InputField({
   label,
   name,
@@ -370,7 +316,7 @@ function InputField({
 }) {
   return (
     <div className="flex items-center justify-between gap-6 py-1">
-      <label className="w-36 sm:w-40 text-right font-semibold text-gray-800">{label}</label>
+      <label className="w-32 text-right font-semibold text-gray-800 text-sm">{label}</label>
       <input
         type="text"
         name={name}
@@ -405,7 +351,7 @@ function SelectField({
 }) {
   return (
     <div className="flex items-center justify-between gap-6 py-1">
-      <label className="w-36 sm:w-40 text-right font-semibold text-gray-800">{label}</label>
+      <label className="w-32 text-right font-semibold text-gray-800 text-sm">{label}</label>
       <select
         name={name}
         value={value}
@@ -427,5 +373,3 @@ function SelectField({
     </div>
   )
 }
-
-export default DisplayHubPage

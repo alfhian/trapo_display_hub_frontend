@@ -16,7 +16,7 @@ const Navbar = ({ title }: NavbarProps) => {
       className="sticky top-0 z-40 w-full h-[48px] flex justify-between items-center
                  px-5 bg-white/90 backdrop-blur-md border-b border-gray-200"
     >
-      <h3 className="text-[15px] font-medium text-gray-800">{title}</h3>
+      <h4 className="text-[25px] font-medium text-gray-800">{title}</h4>
 
       <div className="flex items-center gap-2">
         <FaUserCircle className="text-lg text-gray-600" />

@@ -8,12 +8,17 @@ import {
   GoChevronRight,
 } from 'react-icons/go'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
-const Sidebar = () => {
+interface SidebarProps {
+  onWidthChange?: (width: number) => void
+}
+
+const Sidebar = ({ onWidthChange }: SidebarProps) => {
   const [isExpanded, setIsExpanded] = useState(true)
   const navigate = useNavigate()
   const location = useLocation()
+
   const isActive = (path: string) => location.pathname === path
 
   const handleLogout = () => {
@@ -22,58 +27,62 @@ const Sidebar = () => {
     navigate('/login')
   }
 
+  // 🔹 Update parent (DisplayHubPage) margin kiri sesuai lebar sidebar
+  useEffect(() => {
+    onWidthChange?.(isExpanded ? 256 : 80)
+  }, [isExpanded, onWidthChange])
+
   return (
-    <div className="relative flex">
-      {/* Sidebar */}
+    <>
+      {/* Sidebar utama */}
       <aside
-        className={`min-h-screen flex flex-col justify-between
-                    bg-[#111217] text-white border-r border-gray-800
-                    shadow-[4px_0_25px_rgba(0,0,0,0.45)]
-                    transition-all duration-300 ease-in-out
-                    ${isExpanded ? 'w-64 px-6' : 'w-20 px-2'}`}
+        className={`fixed top-0 left-0 h-screen flex flex-col bg-[#111217] text-white 
+                    border-r border-gray-800 shadow-[4px_0_25px_rgba(0,0,0,0.45)]
+                    transition-all duration-300 ease-in-out z-40
+                    ${isExpanded ? 'w-64' : 'w-20'}`}
       >
-        {/* Logo Section */}
-        <div className="pt-10 flex flex-col items-center">
+        {/* 🔹 Logo */}
+        <div className="flex-shrink-0 flex flex-col items-center pt-10 pb-6">
           {isExpanded ? (
             <img
               src={logoTrapo}
               alt="Trapo Logo"
-              className="h-16 w-auto mb-10 object-contain drop-shadow-[0_0_10px_rgba(56,71,209,0.35)]"
+              className="h-8 w-auto mb-8 object-contain drop-shadow-[0_0_10px_rgba(56,71,209,0.35)]"
             />
           ) : (
-            <div className="h-10 w-10 mb-10 rounded-full bg-[#3847D1] shadow-[0_0_15px_rgba(56,71,209,0.4)]" />
+            <div className="h-10 w-10 mb-8 rounded-full bg-[#3847D1] shadow-[0_0_15px_rgba(56,71,209,0.4)]" />
           )}
+        </div>
 
-          {/* Navigation */}
-          <nav className="w-full space-y-2">
-            <Link to="/dashboard">
-              <SidebarItem
-                label="Dashboard"
-                icon={<GoGraph size={24} />}
-                active={isActive('/dashboard')}
-                isExpanded={isExpanded}
-              />
-            </Link>
-            <Link to="/display-hub">
-              <SidebarItem
-                label="Display Hub"
-                icon={<GoDeviceDesktop size={24} />}
-                active={isActive('/display-hub')}
-                isExpanded={isExpanded}
-              />
-            </Link>
+        {/* 🔹 Menu scrollable */}
+        <div className="flex-1 overflow-y-auto px-3 scrollbar-thin scrollbar-thumb-[#3847D1]/70 scrollbar-track-transparent hover:scrollbar-thumb-[#3847D1]">
+          <nav className="space-y-2 pb-6">
+            <SidebarLink
+              to="/dashboard"
+              label="Dashboard"
+              icon={<GoGraph size={22} />}
+              active={isActive('/dashboard')}
+              isExpanded={isExpanded}
+            />
+            <SidebarLink
+              to="/display-hub"
+              label="Display Hub"
+              icon={<GoDeviceDesktop size={22} />}
+              active={isActive('/display-hub')}
+              isExpanded={isExpanded}
+            />
+
           </nav>
         </div>
 
-        {/* Bottom Section */}
-        <div className="space-y-2 pb-6 border-t border-gray-700/40 pt-4">
-          <Link to="/settings">
-            <SidebarItem
-              label="Settings"
-              icon={<GoGear size={22} />}
-              isExpanded={isExpanded}
-            />
-          </Link>
+        {/* 🔹 Bagian bawah (tetap di bawah) */}
+        <div className="flex-shrink-0 border-t border-gray-700/40 px-3 pt-4 pb-6 space-y-2">
+          <SidebarLink
+            to="/settings"
+            label="Settings"
+            icon={<GoGear size={22} />}
+            isExpanded={isExpanded}
+          />
           <button onClick={handleLogout} className="w-full text-left">
             <SidebarItem
               label="Log Out"
@@ -84,28 +93,50 @@ const Sidebar = () => {
         </div>
       </aside>
 
-      {/* Floating Toggle Button (outside sidebar) */}
+      {/* 🔹 Tombol toggle expand/collapse */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className={`absolute top-4 ${isExpanded ? 'left-63' : 'left-20'}
-                  -translate-x-1/2 bg-[#1f2430] hover:bg-[#2d3342]
-                  text-gray-200 rounded-full p-2 shadow-md transition-all
-                  z-50`}
+        className={`fixed top-4 ${isExpanded ? 'left-64' : 'left-20'}
+                    -translate-x-1/2 bg-[#1f2430] hover:bg-[#2d3342]
+                    text-gray-200 rounded-full p-2 shadow-md transition-all duration-300 z-50`}
       >
         {isExpanded ? <GoChevronLeft size={16} /> : <GoChevronRight size={16} />}
       </button>
-    </div>
+    </>
   )
 }
 
-type SidebarItemProps = {
+/* -------------------- Subkomponen: Link Wrapper -------------------- */
+const SidebarLink = ({
+  to,
+  label,
+  icon,
+  active,
+  isExpanded,
+}: {
+  to: string
   label: string
   icon?: React.ReactNode
   active?: boolean
   isExpanded: boolean
-}
+}) => (
+  <Link to={to}>
+    <SidebarItem label={label} icon={icon} active={active} isExpanded={isExpanded} />
+  </Link>
+)
 
-const SidebarItem = ({ label, icon, active = false, isExpanded }: SidebarItemProps) => {
+/* -------------------- Subkomponen: Item -------------------- */
+const SidebarItem = ({
+  label,
+  icon,
+  active = false,
+  isExpanded,
+}: {
+  label: string
+  icon?: React.ReactNode
+  active?: boolean
+  isExpanded: boolean
+}) => {
   return (
     <div
       className={`flex items-center gap-4 w-full px-3 py-3 rounded-lg cursor-pointer
@@ -116,11 +147,9 @@ const SidebarItem = ({ label, icon, active = false, isExpanded }: SidebarItemPro
                       : 'text-gray-400 hover:bg-[#1a1b22] hover:text-gray-100'
                   }`}
     >
-      {/* Accent bar for active */}
       {active && (
         <span className="absolute left-0 top-0 bottom-0 w-[3px] bg-[rgba(238,42,123,1)] rounded-r-lg" />
       )}
-
       <span
         className={`flex-shrink-0 ${
           active ? 'text-[#3847D1]' : 'text-gray-400'
@@ -128,7 +157,6 @@ const SidebarItem = ({ label, icon, active = false, isExpanded }: SidebarItemPro
       >
         {icon}
       </span>
-
       <span
         className={`transition-all duration-300 whitespace-nowrap ${
           isExpanded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2'

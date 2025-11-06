@@ -8,9 +8,8 @@ import socket from '../socket'
 
 console.log('🌍 Connecting to socket server:', import.meta.env.VITE_BACKEND_URL)
 
-
 type ScreenData = {
-  id: string
+  id: string | null
   screen_id: string
   customer_name: string | null
   brand: string | null
@@ -19,59 +18,55 @@ type ScreenData = {
   year: string | null
   estimated_time: string | null
   service: string | null
-  updated_at: string | null
   status: 'Active' | 'Inactive'
 } | null
 
 export default function DashboardPage() {
   const [cards, setCards] = useState<ScreenData[]>([null, null, null, null])
-  const [isSidebarExpanded, setIsSidebarExpanded] = useState(true)
+  const [sidebarWidth, setSidebarWidth] = useState(256) // default expanded width
 
-  // ✅ Fetch data awal
+  /** 🔹 Fetch data awal */
   const fetchData = async () => {
     try {
       const token = localStorage.getItem('token')
       const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/screens`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
+          Accept: 'application/json',
         },
       })
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
 
-      // mapping 4 slot berdasarkan display_number
       const mapped = [null, null, null, null]
-        data.forEach((screen: any, index: number) => {
-          const idx = screen.display_number ? screen.display_number - 1 : index
-          if (idx >= 0 && idx < 4) {
-            mapped[idx] = {
-              id: screen.id, // id dari screen_display
-              screen_id: screen.screen_id, // ✅ tambahkan ini agar cocok dengan payload socket
-              customer_name: screen.customer_name || '',
-              brand: screen.brand || '',
-              type: screen.type || '',
-              license_plate: screen.license_plate || '',
-              year: screen.year || '',
-              estimated_time: screen.estimated_time || '',
-              service: screen.service || '',
-              status: screen.customer_name ? 'Active' : 'Inactive',
-            }
+      data.forEach((screen: any, index: number) => {
+        const idx = screen.display_number ? screen.display_number - 1 : index
+        if (idx >= 0 && idx < 4) {
+          mapped[idx] = {
+            id: screen.id,
+            screen_id: screen.screen_id,
+            customer_name: screen.customer_name || '',
+            brand: screen.brand || '',
+            type: screen.type || '',
+            license_plate: screen.license_plate || '',
+            year: screen.year || '',
+            estimated_time: screen.estimated_time || '',
+            service: screen.service || '',
+            status: screen.customer_name ? 'Active' : 'Inactive',
           }
-        })
-        setCards(mapped)
+        }
+      })
+      setCards(mapped)
     } catch (error) {
       console.error('❌ Error fetching dashboard data:', error)
     }
   }
 
-  // ✅ Socket & fetch lifecycle
+  /** 🔹 Socket & lifecycle */
   useEffect(() => {
     fetchData()
-
-    console.log('📡 Dashboard mounted')
 
     socket.emit('join_screen', '00000000-0000-0000-0000-000000000001')
     socket.emit('join_screen', '00000000-0000-0000-0000-000000000002')
@@ -79,14 +74,10 @@ export default function DashboardPage() {
     socket.emit('join_screen', '00000000-0000-0000-0000-000000000004')
 
     socket.on('screen:update', ({ screen_id, payload }) => {
-      console.log('📡 [Realtime Update] screen_id:', screen_id, payload)
-
       setCards((prev) => {
         const updated = [...prev]
         const idx = prev.findIndex((c) => c?.screen_id === screen_id)
-
         if (idx !== -1) {
-          // ✅ Jika data baru aktif, isi slot
           if (payload.is_active) {
             updated[idx] = {
               screen_id,
@@ -98,9 +89,9 @@ export default function DashboardPage() {
               year: payload.year,
               service: payload.service,
               estimated_time: payload.estimated_time,
+              status: 'Active',
             }
           } else {
-            // ❌ Jika dihapus, kosongkan field saja (bukan null)
             updated[idx] = {
               screen_id,
               id: null,
@@ -111,26 +102,21 @@ export default function DashboardPage() {
               year: null,
               service: null,
               estimated_time: null,
+              status: 'Inactive',
             }
           }
         }
-
         return updated
       })
     })
 
-    socket.onAny((event, ...args) => {
-      console.log('🛰️ Received socket event:', event, args)
-    })
-
     return () => {
-      console.log('🧹 Cleaning socket listeners')
       socket.off('screen:update')
       socket.offAny()
     }
   }, [])
 
-  // ✅ Remove display (mark inactive)
+  /** 🔹 Remove display */
   const handleRemoveFromDisplay = async (index: number) => {
     const screen = cards[index]
     if (!screen?.id) return
@@ -143,9 +129,7 @@ export default function DashboardPage() {
       confirmButtonText: 'Ya, Hapus',
       cancelButtonText: 'Batal',
       confirmButtonColor: '#3847D1',
-      background: '#fff',
     })
-
     if (!confirm.isConfirmed) return
 
     try {
@@ -153,11 +137,10 @@ export default function DashboardPage() {
       const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/screens/${screen.id}/remove`, {
         method: 'PATCH',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       })
-
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
 
       Swal.fire({
@@ -177,16 +160,25 @@ export default function DashboardPage() {
     }
   }
 
+  /** 🔹 UI Layout */
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar isExpanded={isSidebarExpanded} setIsExpanded={setIsSidebarExpanded} />
+    <div className="min-h-screen bg-gray-50">
+      {/* Sidebar fixed */}
+      <Sidebar onWidthChange={setSidebarWidth} />
 
-      <main className="flex-1 overflow-y-auto">
-        <Navbar title="Dashboard (Realtime)" />
+      {/* Main area menyesuaikan sidebar */}
+      <main
+        className="transition-all duration-300 overflow-y-auto"
+        style={{ marginLeft: `${sidebarWidth}px` }}
+      >
+        <Navbar title="Dashboard" />
 
         <div className="px-6 py-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-8">
           {cards.map((card, i) => (
-            <div key={i} className="rounded-xl bg-white shadow-sm p-3 flex flex-col items-center">
+            <div
+              key={i}
+              className="rounded-xl bg-white shadow-sm p-3 flex flex-col items-center"
+            >
               <div className="flex items-center justify-between w-full mb-3 px-1">
                 <h3 className="text-sm font-semibold text-gray-700">Slot {i + 1}</h3>
                 <span
