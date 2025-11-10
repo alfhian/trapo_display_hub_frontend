@@ -39,6 +39,19 @@ body {
   font-variation-settings: wdth 100, wght 300;
 }
 
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  width: 100vw !important;
+  height: 100vh;
+  overflow-x: hidden;
+}
+
+html {
+  transform: none !important;
+  zoom: 1 !important;
+}
+
 h1 {
   font-size: 3.2em;
   line-height: 1.1;
