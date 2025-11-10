@@ -39,22 +39,6 @@ body {
   font-variation-settings: wdth 100, wght 300;
 }
 
-html, body, #root {
-  margin: 0;
-  padding: 0;
-  width: 1366px !important;
-  height: 768px !important;
-  overflow: hidden;
-  position: fixed;
-  top: 0;
-  left: 0;
-}
-
-html {
-  transform: none !important;
-  zoom: 1 !important;
-}
-
 h1 {
   font-size: 3.2em;
   line-height: 1.1;

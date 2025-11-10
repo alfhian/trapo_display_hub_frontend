@@ -3,33 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>trapo-display-frontend</title>
   </head>
   <body>
-  <div id="scale-wrapper">
     <div id="root"></div>
-  </div>
-  <script>
-    const ua = navigator.userAgent.toLowerCase()
-    const isCoolita = ua.includes('coocaa') || ua.includes('coolita')
-
-    if (isCoolita) {
-      const ratio = window.devicePixelRatio || 1
-      let scale = 1
-      if (ratio > 1.05) scale = 0.85
-      else if (ratio < 0.95) scale = 1.15
-
-      const wrap = document.getElementById('scale-wrapper')
-      wrap.style.transform = `scale(${scale})`
-      wrap.style.transformOrigin = 'top left'
-      wrap.style.width = `${100 / scale}vw`
-      wrap.style.height = `${100 / scale}vh`
-    }
-  </script>
-  <script type="module" src="/src/main.tsx"></script>
-</body>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
