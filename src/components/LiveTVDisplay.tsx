@@ -80,32 +80,34 @@ export default function LiveTVDisplay({
   const carTitle = `${data.brand || ''} ${data.type || ''} ${data.year || ''}`.trim()
   const totalLength = carTitle.length
 
+  // Ganti bagian font-size dynamic:
   const carFontSize = (() => {
-    if (totalLength > 25) return 'clamp(2rem,5vw,4rem)'
-    if (totalLength > 15) return 'clamp(3rem,7vw,5.5rem)'
-    return 'clamp(3.5rem,10vw,6.5rem)'
+    if (totalLength > 25) return '40px'
+    if (totalLength > 15) return '50px'
+    return '60px'
   })()
 
   const labelStyle = {
-    fontSize: 'clamp(1.4rem,2vw,2.2rem)',
+    fontSize: '22px',
     color: '#f3f4f6',
     textShadow:
       '0 0 10px rgba(56,71,209,0.8), 0 0 14px rgba(255,255,255,0.5), 0 0 18px rgba(56,71,209,0.6)',
     letterSpacing: '0.15em',
   }
+  const customerFont = '26px'
+  const valueFont = '36px'
+  const finishFont = '42px'
 
-  const customerFont = 'clamp(1.2rem,2.5vw,2rem)'
-  const valueFont = 'clamp(2rem,5vw,3.6rem)'
-  const finishFont = 'clamp(2.6rem,7vw,5rem)'
 
   return (
     <div
-      className="absolute inset-0 w-screen h-screen overflow-hidden flex items-center justify-center animate-fadein"
+      className="absolute top-0 left-0 flex items-center justify-center animate-fadein"
       style={{
+        width: '1366px',
+        height: '768px',
         backgroundImage: `url(${bgcard})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
       }}
     >
       <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/70" />
