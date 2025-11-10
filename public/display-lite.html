@@ -17,7 +17,7 @@
       .container {
         position: relative;
         width: 100vw; height: 100vh;
-        background-image: url('/src/assets/bgcard.png');
+        background-image: url('/assets/bgcard.png');
         background-size: cover;
         background-position: center;
         display: flex; justify-content: center; align-items: center;
@@ -144,10 +144,10 @@
       <div class="overlay"></div>
       <div class="content">
         <div id="mainContent">
-          <img src="/src/assets/LOGO_TRAPO.png" class="logo-center" alt="TRAPO Logo" />
+          <img src="/assets/LOGO_TRAPO.png" class="logo-center" alt="TRAPO Logo" />
         </div>
       </div>
-      <img src="/src/assets/LOGO_TRAPO.png" class="logo-watermark" alt="TRAPO Logo" />
+      <img src="/assets/LOGO_TRAPO.png" class="logo-watermark" alt="TRAPO Logo" />
     </div>
 
     <script>
@@ -168,7 +168,7 @@
 
       const render = (d) => {
         if (!d || !d.customer_name) {
-          main.innerHTML = `<img src="/src/assets/LOGO_TRAPO.png" class="logo-center" alt="TRAPO Logo" />`;
+          main.innerHTML = `<img src="/assets/LOGO_TRAPO.png" class="logo-center" alt="TRAPO Logo" />`;
           return;
         }
 
