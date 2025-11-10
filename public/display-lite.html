@@ -67,25 +67,25 @@
       .cartype {
         margin-top: 1vh;
         font-weight: 800;
-        font-size: clamp(28px,5vw,64px);
         text-shadow: 0 0 12px rgba(56,71,209,0.8),
                      0 0 25px rgba(214,51,132,0.6),
                      0 0 40px rgba(0,0,0,0.9);
         letter-spacing: 0.05em;
       }
 
-      /* ✅ Grid lebih besar, center sejati, horizontal */
+      /* ✅ Tetap horizontal dan center */
       .grid {
         display: flex;
         justify-content: center;
         align-items: stretch;
         gap: 5vw;
         width: 100%;
+        margin-top: 5vh;
       }
 
       .card {
         flex: 0 1 35%;
-        min-width: 520px;
+        min-width: 420px;
         background: rgba(0,0,0,0.45);
         border: 1px solid rgba(255,255,255,0.3);
         backdrop-filter: blur(10px);
@@ -96,14 +96,12 @@
 
       .card-value {
         margin-top: 1vh;
-        font-size: clamp(22px,3.5vw,42px);
         font-weight: 700;
         text-shadow: 0 0 10px rgba(0,0,0,0.8);
       }
 
       .finish {
         margin-top: 1vh;
-        font-size: clamp(22px,4vw,46px);
         font-weight: 800;
         text-shadow: 0 0 20px rgba(56,71,209,0.8),
                      0 0 30px rgba(214,51,132,0.5);
@@ -135,6 +133,7 @@
         }
       }
     </style>
+
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   </head>
 
@@ -165,32 +164,44 @@
         }
       };
 
+      // ✅ Fungsi penyesuaian font dinamis (>15 karakter akan mengecil)
+      const dynamicFontSize = (text, base = 4.2, max = 60) => {
+        if (!text) return `clamp(24px, ${base}vw, ${max}px)`;
+        const len = text.length;
+        if (len > 30) return `clamp(20px, ${base - 1.4}vw, ${max - 14}px)`;
+        if (len > 20) return `clamp(22px, ${base - 0.9}vw, ${max - 10}px)`;
+        if (len > 15) return `clamp(24px, ${base - 0.5}vw, ${max - 6}px)`;
+        return `clamp(24px, ${base}vw, ${max}px)`;
+      };
+
       const render = (d) => {
         if (!d || !d.customer_name) {
           main.innerHTML = `<img src="/assets/LOGO_TRAPO.png" class="logo-center" alt="TRAPO Logo" />`;
           return;
         }
 
+        const carText = `${d.brand || ""} ${d.type || ""} ${d.year ? "• " + d.year : ""}`.trim();
+
         main.innerHTML = `
           <div>
             <p class="customer">${d.customer_name}</p>
             <p class="label">CAR TYPE</p>
-            <h2 class="cartype">${d.brand || ""} ${d.type || ""} ${d.year ? "• " + d.year : ""}</h2>
+            <h2 class="cartype" style="font-size:${dynamicFontSize(carText, 5, 64)}">${carText}</h2>
 
             <div class="grid">
               <div class="card">
                 <p class="label">SERVICE TYPE</p>
-                <p class="card-value">${d.service || "-"}</p>
+                <p class="card-value" style="font-size:${dynamicFontSize(d.service, 3.5, 42)}">${d.service || "-"}</p>
               </div>
               <div class="card">
                 <p class="label">PLATE NUMBER</p>
-                <p class="card-value">${d.license_plate || "-"}</p>
+                <p class="card-value" style="font-size:${dynamicFontSize(d.license_plate, 3.5, 42)}">${d.license_plate || "-"}</p>
               </div>
             </div>
 
             <div style="margin-top:10vh">
               <p class="label">FINISH DATE</p>
-              <p class="finish">${formatDate(d.estimated_time)}</p>
+              <p class="finish" style="font-size:${dynamicFontSize(formatDate(d.estimated_time), 4, 46)}">${formatDate(d.estimated_time)}</p>
             </div>
           </div>
         `;
