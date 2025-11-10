@@ -17,7 +17,12 @@
 
       if (isCoolita) {
         const ratio = window.devicePixelRatio || 1
-        const scale = 1 / ratio
+        let scale = 1
+
+        // Jika ratio terlalu besar (mis. 1.25 → perkecil), jika terlalu kecil (0.75 → perbesar)
+        if (ratio > 1.05) scale = 1 / ratio
+        else if (ratio < 0.95) scale = 1.1
+        else scale = 1
 
         document.documentElement.style.transform = `scale(${scale})`
         document.documentElement.style.transformOrigin = 'top left'
@@ -25,17 +30,13 @@
         document.documentElement.style.height = `${100 / scale}vh`
         document.documentElement.style.overflow = 'hidden'
 
-        console.log('[DisplayHub] Auto-scale applied for TV:', scale)
+        console.log('[DisplayHub] Scale applied:', scale, 'Ratio:', ratio)
       } else {
         document.documentElement.style.transform = 'none'
         document.documentElement.style.zoom = '1'
-        document.documentElement.style.width = '100vw'
-        document.documentElement.style.height = '100vh'
-        console.log('[DisplayHub] Normal render (no scale) for:', ua)
+        console.log('[DisplayHub] Normal render')
       }
     </script>
-
-
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
