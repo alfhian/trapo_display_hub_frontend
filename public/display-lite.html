@@ -29,7 +29,7 @@
     </style>
   </head>
   <body>
-    <img src="/assets/LOGO_TRAPO.png" alt="TRAPO Logo" />
+    <img src="/src/assets/LOGO_TRAPO.png" alt="TRAPO Logo" />
     <div id="name">Loading...</div>
     <div id="car"></div>
     <div id="service"></div>
@@ -37,7 +37,7 @@
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script>
       const id = window.location.pathname.split("/").pop(); 
-      const backend = "https://trapo-backend-url"; // ganti dengan backend kamu
+      const backend = "http://trapo-id.cloud";
       const nameEl = document.getElementById("name");
       const carEl = document.getElementById("car");
       const serviceEl = document.getElementById("service");
