@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=1366, height=768, initial-scale=1.0, user-scalable=no"
+    />
+    <title>TRAPO Display Lite</title>
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        width: 1366px;
+        height: 768px;
+        background: black;
+        color: white;
+        font-family: Poppins, sans-serif;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+      }
+      #name { font-size: 36px; font-weight: 600; margin-bottom: 10px; }
+      #car { font-size: 28px; margin-bottom: 10px; }
+      #service { font-size: 24px; opacity: 0.9; }
+      img { width: 300px; margin-bottom: 30px; }
+    </style>
+  </head>
+  <body>
+    <img src="/assets/LOGO_TRAPO.png" alt="TRAPO Logo" />
+    <div id="name">Loading...</div>
+    <div id="car"></div>
+    <div id="service"></div>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+      const id = window.location.pathname.split("/").pop(); 
+      const backend = "https://trapo-backend-url"; // ganti dengan backend kamu
+      const nameEl = document.getElementById("name");
+      const carEl = document.getElementById("car");
+      const serviceEl = document.getElementById("service");
+
+      function renderData(d) {
+        if (!d || !d.customer_name) {
+          nameEl.textContent = "Menunggu Data...";
+          carEl.textContent = "";
+          serviceEl.textContent = "";
+          return;
+        }
+        nameEl.textContent = d.customer_name;
+        carEl.textContent = `${d.brand || ""} ${d.type || ""} ${d.year || ""}`;
+        serviceEl.textContent = `${d.service || "-"} • ${d.license_plate || "-"}`;
+      }
+
+      // Fetch awal
+      fetch(`${backend}/api/screens/${id}`)
+        .then((r) => r.json())
+        .then(renderData)
+        .catch(() => (nameEl.textContent = "Gagal memuat"));
+
+      // Realtime socket
+      const socket = io(backend, { transports: ["websocket"] });
+      socket.on("connect", () => {
+        socket.emit("join_screen", id);
+      });
+      socket.on("screen:update", ({ screen_id, payload }) => {
+        if (screen_id === id) renderData(payload);
+      });
+    </script>
+  </body>
+</html>
