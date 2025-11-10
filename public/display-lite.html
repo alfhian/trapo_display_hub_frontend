@@ -78,9 +78,13 @@
         display: flex;
         justify-content: center;
         align-items: stretch;
-        gap: 100px;
         width: 100%;
         margin-top: 5vh;
+      }
+
+      /* Fallback manual untuk TV yang tidak support flex gap */
+      .grid .card:first-child {
+        margin-right: 5vw; /* atau bisa disesuaikan, misal 80px–120px */
       }
 
       .card {
