@@ -10,33 +10,26 @@
     <title>trapo-display-frontend</title>
   </head>
   <body>
+  <div id="scale-wrapper">
     <div id="root"></div>
-    <script>
-      const ua = navigator.userAgent.toLowerCase()
-      const isCoolita = ua.includes('coocaa') || ua.includes('coolita') || ua.includes('smarttv')
+  </div>
+  <script>
+    const ua = navigator.userAgent.toLowerCase()
+    const isCoolita = ua.includes('coocaa') || ua.includes('coolita')
 
-      if (isCoolita) {
-        const ratio = window.devicePixelRatio || 1
-        let scale = 1
+    if (isCoolita) {
+      const ratio = window.devicePixelRatio || 1
+      let scale = 1
+      if (ratio > 1.05) scale = 0.85
+      else if (ratio < 0.95) scale = 1.15
 
-        // Jika ratio terlalu besar (mis. 1.25 → perkecil), jika terlalu kecil (0.75 → perbesar)
-        if (ratio > 1.05) scale = 1 / ratio
-        else if (ratio < 0.95) scale = 1.1
-        else scale = 1
-
-        document.documentElement.style.transform = `scale(${scale})`
-        document.documentElement.style.transformOrigin = 'top left'
-        document.documentElement.style.width = `${100 / scale}vw`
-        document.documentElement.style.height = `${100 / scale}vh`
-        document.documentElement.style.overflow = 'hidden'
-
-        console.log('[DisplayHub] Scale applied:', scale, 'Ratio:', ratio)
-      } else {
-        document.documentElement.style.transform = 'none'
-        document.documentElement.style.zoom = '1'
-        console.log('[DisplayHub] Normal render')
-      }
-    </script>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+      const wrap = document.getElementById('scale-wrapper')
+      wrap.style.transform = `scale(${scale})`
+      wrap.style.transformOrigin = 'top left'
+      wrap.style.width = `${100 / scale}vw`
+      wrap.style.height = `${100 / scale}vh`
+    }
+  </script>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
 </html>

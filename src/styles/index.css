@@ -42,9 +42,12 @@ body {
 html, body, #root {
   margin: 0;
   padding: 0;
-  width: 100vw !important;
-  height: 100vh;
-  overflow-x: hidden;
+  width: 1366px !important;
+  height: 768px !important;
+  overflow: hidden;
+  position: fixed;
+  top: 0;
+  left: 0;
 }
 
 html {
