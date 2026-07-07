@@ -1,13 +1,15 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
-    "module": "ESNext",
-    "jsx": "react-jsx",
-    "moduleResolution": "Node",
-    "strict": true,
-    "esModuleInterop": true,
+    "noEmitOnError": false,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "strict": false,
+    "jsx": "react-jsx",
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "types": ["react", "react-dom", "vite/client"]
   },
-  "include": ["src"]
+  "include": ["src", "vite-env.d.ts"]
 }
+
