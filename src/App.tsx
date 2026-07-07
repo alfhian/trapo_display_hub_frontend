@@ -1,6 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import ProtectedRoute from "./routes/ProtectedRoutes";
-import TVOutputPage from "./pages/TVOutputPage";
 
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -9,7 +8,6 @@ import DisplayHubPage from "./pages/DisplayHubPage";
 import DisplayScreenPage from './pages/DisplayScreenPage'
 import SettingsPage from "./pages/SettingsPage";
 import './styles/Navbar.css';
-import { Tv } from "lucide-react";
 
 function App() {
   return (
@@ -22,15 +20,14 @@ function App() {
         {/* Protected Routes (Hanya bisa diakses kalau sudah login) */}
         /* ProtectedRoute */
         <Route
-          path="/dashboard" element={<ProtectedRoute> <DashboardPage /> </ProtectedRoute>}
+          path="/dashboard" element={<ProtectedRoute allowedRoles={["admin"]}> <DashboardPage /> </ProtectedRoute>}
         />
         <Route
-          path="/display-hub" element={<DisplayHubPage />
-          }
+          path="/display-hub" element={<ProtectedRoute allowedRoles={["admin"]}> <DisplayHubPage /> </ProtectedRoute>}
         />
         <Route path="/display/:id" element={<DisplayScreenPage />} />
         <Route
-        path="/settings" element={<ProtectedRoute> <SettingsPage /> </ProtectedRoute>}
+        path="/settings" element={<ProtectedRoute allowedRoles={["admin"]}> <SettingsPage /> </ProtectedRoute>}
         />
 
         {/* Default Redirect */}

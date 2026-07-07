@@ -1,15 +1,27 @@
-import { useEffect, useState } from 'react'
-import { CheckCircle, XCircle } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
 import Swal from 'sweetalert2'
 import Navbar from '../components/Navbar'
 import Sidebar from '../components/Sidebar'
 import 'sweetalert2/dist/sweetalert2.min.css'
 import { getServices } from '../config/services'
 import { getEstimatedFinishDate } from '../utils/timeUtils'
+import { apiUrl, authHeaders } from '../services/api'
 
-export type ScreenPayload = {
-  screen_id?: string
-  id?: string
+type ScreenRecord = {
+  id: string | null
+  screen_id: string
+  customer_name: string | null
+  brand: string | null
+  type: string | null
+  year: string | number | null
+  license_plate: string | null
+  service: string | null
+  estimated_time: string | null
+}
+
+type ScreenPayload = {
+  screen_id: string
+  id: string | null
   customer_name: string
   brand: string
   type: string
@@ -20,8 +32,8 @@ export type ScreenPayload = {
   status: 'Active' | 'Inactive' | string
 }
 
-export type CardData = {
-  id: string
+type CardData = {
+  id: string | null
   screenId: string
   customerName: string
   brand: string
@@ -34,59 +46,65 @@ export type CardData = {
   time: string
 }
 
+const getUniqueScreens = (screens: ScreenRecord[]) => {
+  const uniqueScreens = new Map<string, ScreenRecord>()
+  screens.forEach((screen) => {
+    if (!uniqueScreens.has(screen.screen_id)) {
+      uniqueScreens.set(screen.screen_id, screen)
+    }
+  })
+  return Array.from(uniqueScreens.values())
+}
+
 export default function DisplayHubPage() {
   const [cards, setCards] = useState<CardData[]>([])
-  const [isSidebarHovered, setIsSidebarHovered] = useState(false)
   const [isLoading, setIsLoading] = useState<Record<string, boolean>>({})
+  const [sidebarWidth, setSidebarWidth] = useState(256)
 
-  // 🔹 Fetch data awal
-  const fetchScreens = async () => {
+  const fetchScreens = useCallback(async () => {
     try {
-      const token = localStorage.getItem('token')
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/screens`, {
+      const response = await fetch(apiUrl('/api/screens'), {
         headers: {
-          Authorization: `Bearer ${token}`,
+          ...authHeaders(),
           'Content-Type': 'application/json',
         },
       })
       if (!response.ok) throw new Error('Failed to fetch screens')
-      const data: ScreenPayload[] = await response.json()
+      const data: ScreenRecord[] = await response.json()
 
-      const mapped = data.map((s) => ({
-        id: s.id,
-        screenId: s.screen_id,
-        customerName: s.customer_name ?? '',
-        brand: s.brand ?? '',
-        carType: s.type ?? '',
-        year: s.year ?? '',
-        service: s.service ?? '',
-        licensePlate: s.license_plate ?? '',
-        estimatedTime: s.estimated_time ?? '',
-        time: s.estimated_time ?? '-',
-        status: s.customer_name ? 'Active' : 'Inactive',
+      const mapped = getUniqueScreens(data).map((screen) => ({
+        id: screen.id ?? null,
+        screenId: screen.screen_id,
+        customerName: screen.customer_name ?? '',
+        brand: screen.brand ?? '',
+        carType: screen.type ?? '',
+        year: screen.year ? String(screen.year) : '',
+        service: screen.service ?? '',
+        licensePlate: screen.license_plate ?? '',
+        estimatedTime: screen.estimated_time ?? '',
+        time: screen.estimated_time ?? '-',
+        status: screen.id ? 'Active' : 'Inactive',
       }))
       setCards(mapped)
-    } catch (e) {
+    } catch {
       Swal.fire('Error', 'Failed to load display hub data.', 'error')
     }
-  }
+  }, [])
 
   useEffect(() => {
     fetchScreens()
-  }, [])
+  }, [fetchScreens])
 
-  // 🔹 Assign Display
   const handleDisplay = async (index: number, form: Omit<CardData, 'status' | 'time'>) => {
     const tvId = cards[index]?.screenId
     if (!tvId) return
-    setIsLoading((p) => ({ ...p, [tvId]: true }))
+    setIsLoading((previous) => ({ ...previous, [tvId]: true }))
 
     try {
-      const token = localStorage.getItem('token')
       const estimatedTime = getEstimatedFinishDate(form.service).toISOString()
-
       const payload: ScreenPayload = {
-        id: tvId,
+        id: cards[index]?.id ?? null,
+        screen_id: tvId,
         customer_name: form.customerName,
         brand: form.brand,
         type: form.carType,
@@ -97,9 +115,9 @@ export default function DisplayHubPage() {
         status: 'Active',
       }
 
-      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/screens/${tvId}/assign`, {
+      const res = await fetch(apiUrl(`/api/screens/${tvId}/assign`), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify(payload),
       })
 
@@ -115,18 +133,17 @@ export default function DisplayHubPage() {
     } catch (err) {
       Swal.fire('Error', err instanceof Error ? err.message : 'Unknown error', 'error')
     } finally {
-      setIsLoading((p) => ({ ...p, [tvId]: false }))
+      setIsLoading((previous) => ({ ...previous, [tvId]: false }))
     }
   }
 
-  // 🔹 Remove Display
   const handleRemove = async (index: number, resetForm?: () => void) => {
-    const tvId = cards[index]?.id
-    if (!tvId) return
+    const screenId = cards[index]?.screenId
+    if (!screenId) return
 
     const confirm = await Swal.fire({
       title: 'Remove Display?',
-      text: 'This slot will be marked as inactive.',
+      text: 'All active display records for this screen will be marked inactive.',
       icon: 'warning',
       showCancelButton: true,
       confirmButtonText: 'Yes, Remove',
@@ -137,10 +154,9 @@ export default function DisplayHubPage() {
     if (!confirm.isConfirmed) return
 
     try {
-      const token = localStorage.getItem('token')
-      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/screens/${tvId}/remove`, {
+      const res = await fetch(apiUrl(`/api/screens/${screenId}/remove`), {
         method: 'PATCH',
-        headers: { Authorization: `Bearer ${token}` },
+        headers: authHeaders(),
       })
       if (!res.ok) throw new Error('Failed')
 
@@ -154,7 +170,19 @@ export default function DisplayHubPage() {
 
       setCards((prev) => {
         const updated = [...prev]
-        updated[index] = { ...updated[index], status: 'Inactive' } as CardData
+        updated[index] = {
+          ...updated[index],
+          id: null,
+          customerName: '',
+          brand: '',
+          carType: '',
+          year: '',
+          service: '',
+          licensePlate: '',
+          estimatedTime: '',
+          time: '-',
+          status: 'Inactive',
+        } as CardData
         return updated
       })
       resetForm?.()
@@ -162,8 +190,6 @@ export default function DisplayHubPage() {
       Swal.fire('Error', 'Failed to deactivate display.', 'error')
     }
   }
-
-  const [sidebarWidth, setSidebarWidth] = useState(256)
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -189,10 +215,8 @@ export default function DisplayHubPage() {
       </main>
     </div>
   )
-
 }
 
-/* ----------------------------- Subcomponent ----------------------------- */
 function DisplayCard({
   index,
   card,
@@ -218,29 +242,28 @@ function DisplayCard({
   const isActive = card.status === 'Active'
   const estimatedTime = form.service ? getEstimatedFinishDate(form.service).toLocaleString() : '-'
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-    setForm({ ...form, [e.target.name]: e.target.value })
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+    setForm({ ...form, [event.target.name]: event.target.value })
 
   const resetForm = () =>
     setForm({ customerName: '', brand: '', carType: '', year: '', service: '', licensePlate: '' })
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!form.service) return alert('Please select a service.')
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault()
+    if (!form.service && !isActive) return alert('Please select a service.')
     if (isActive) await onRemove(index, resetForm)
-    else onDisplay(index, {
-      ...form, estimatedTime,
-      id: '',
-      screenId: ''
-    })
+    else onDisplay(index, { ...form, estimatedTime, id: card.id, screenId: card.screenId })
   }
 
   return (
-    <div className="rounded-xl bg-white shadow-sm hover:shadow-md transition-all duration-300 p-6 flex flex-col items-center">
-      <div className="flex items-center justify-between w-full mb-4">
-        <h3 className="text-sm font-semibold text-gray-700">Slot {index + 1}</h3>
+    <div className="rounded-lg border border-gray-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md">
+      <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+        <div>
+          <h3 className="text-base font-semibold text-gray-900">Slot {index + 1}</h3>
+          <p className="mt-0.5 text-xs text-gray-500">{card.screenId}</p>
+        </div>
         <span
-          className={`text-xs font-medium px-2 py-1 rounded-full ${
+          className={`rounded-md px-2.5 py-1 text-xs font-semibold ${
             isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
           }`}
         >
@@ -248,42 +271,47 @@ function DisplayCard({
         </span>
       </div>
 
-      <form onSubmit={handleSubmit} className="w-full space-y-2">
-        {[
-          { label: 'Customer Name', name: 'customerName' },
-          { label: 'Car Brand', name: 'brand' },
-          { label: 'Type', name: 'carType' },
-          { label: 'Year', name: 'year' },
-          { label: 'License Plate', name: 'licensePlate' },
-        ].map((f) => (
-          <InputField
-            key={f.name}
-            label={f.label}
-            name={f.name}
-            value={form[f.name as keyof typeof form]}
+      <form onSubmit={handleSubmit} className="p-5">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {[
+            { label: 'Customer Name', name: 'customerName', placeholder: 'e.g. Andi Wijaya' },
+            { label: 'Car Brand', name: 'brand', placeholder: 'e.g. Toyota' },
+            { label: 'Type', name: 'carType', placeholder: 'e.g. Avanza' },
+            { label: 'Year', name: 'year', placeholder: 'e.g. 2023' },
+            { label: 'License Plate', name: 'licensePlate', placeholder: 'e.g. B 1234 CD' },
+          ].map((field) => (
+            <InputField
+              key={field.name}
+              label={field.label}
+              name={field.name}
+              placeholder={field.placeholder}
+              value={form[field.name as keyof typeof form]}
+              onChange={handleChange}
+              disabled={isActive || isLoading}
+            />
+          ))}
+
+          <SelectField
+            label="Service"
+            name="service"
+            value={form.service}
             onChange={handleChange}
+            options={services.map((service) => ({ label: service.label, value: service.value }))}
             disabled={isActive || isLoading}
           />
-        ))}
+        </div>
 
-        <SelectField
-          label="Service"
-          name="service"
-          value={form.service}
-          onChange={handleChange}
-          options={services.map((s) => ({ label: s.label, value: s.value }))}
-          disabled={isActive || isLoading}
-        />
+        <div className="mt-4">
+          <InputField label="Estimated Finish" value={estimatedTime} disabled readOnly />
+        </div>
 
-        <InputField label="Estimated Time" value={estimatedTime} disabled readOnly />
-
-        <div className="flex justify-between items-center pt-3">
+        <div className="mt-5 flex flex-col gap-3 border-t border-gray-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
           <button
             type="submit"
             disabled={isLoading}
-            className={`px-8 py-2.5 rounded-full font-semibold text-white transition-all duration-300 shadow-sm ${
+            className={`rounded-lg px-5 py-2.5 text-sm font-semibold text-white transition-all duration-200 ${
               isActive
-                ? 'bg-[#f68b8b] hover:bg-[#f57b7b]'
+                ? 'bg-rose-500 hover:bg-rose-600'
                 : 'bg-[#3847D1] hover:bg-[#2e3ab8]'
             } ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
           >
@@ -295,7 +323,7 @@ function DisplayCard({
               href={`/display/${card.screenId}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="px-8 py-2.5 rounded-full text-sm font-semibold text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 transition-all duration-300 shadow-sm"
+              className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-center text-sm font-semibold text-gray-700 transition-all duration-200 hover:bg-gray-50"
             >
               View on TV
             </a>
@@ -311,33 +339,38 @@ function InputField({
   name,
   value,
   onChange,
+  placeholder,
   disabled = false,
   readOnly = false,
 }: {
   label: string
   name?: string
   value: string
-  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void
+  onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void
+  placeholder?: string
   disabled?: boolean
   readOnly?: boolean
 }) {
   return (
-    <div className="flex items-center justify-between gap-6 py-1">
-      <label className="w-32 text-right font-semibold text-gray-800 text-sm">{label}</label>
+    <label className="block">
+      <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+        {label}
+      </span>
       <input
         type="text"
         name={name}
         value={value}
         onChange={onChange}
+        placeholder={placeholder}
         disabled={disabled}
         readOnly={readOnly}
-        className={`flex-1 border rounded-lg p-2 text-sm transition-all duration-300 ${
+        className={`h-11 w-full rounded-lg border px-3 text-sm text-gray-900 outline-none transition-all duration-200 ${
           disabled
-            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-            : 'border-gray-300 hover:border-blue-400 focus:border-blue-500 focus:ring focus:ring-blue-100'
+            ? 'cursor-not-allowed border-gray-200 bg-gray-50 text-gray-400'
+            : 'border-gray-300 bg-white placeholder:text-gray-400 hover:border-gray-400 focus:border-[#3847D1] focus:ring-4 focus:ring-[#3847D1]/10'
         }`}
       />
-    </div>
+    </label>
   )
 }
 
@@ -352,31 +385,33 @@ function SelectField({
   label: string
   name: string
   value: string
-  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void
+  onChange: (event: React.ChangeEvent<HTMLSelectElement>) => void
   options: { label: string; value: string }[]
   disabled?: boolean
 }) {
   return (
-    <div className="flex items-center justify-between gap-6 py-1">
-      <label className="w-32 text-right font-semibold text-gray-800 text-sm">{label}</label>
+    <label className="block">
+      <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+        {label}
+      </span>
       <select
         name={name}
         value={value}
         onChange={onChange}
         disabled={disabled}
-        className={`flex-1 border rounded-lg p-2 text-sm transition-all duration-300 ${
+        className={`h-11 w-full rounded-lg border px-3 text-sm text-gray-900 outline-none transition-all duration-200 ${
           disabled
-            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-            : 'border-gray-300 hover:border-blue-400 focus:border-blue-500 focus:ring focus:ring-blue-100'
+            ? 'cursor-not-allowed border-gray-200 bg-gray-50 text-gray-400'
+            : 'border-gray-300 bg-white hover:border-gray-400 focus:border-[#3847D1] focus:ring-4 focus:ring-[#3847D1]/10'
         }`}
       >
         <option value="">Select {label}</option>
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
           </option>
         ))}
       </select>
-    </div>
+    </label>
   )
 }

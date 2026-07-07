@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { FaUserCircle } from 'react-icons/fa'
 
 type NavbarProps = { title: string }

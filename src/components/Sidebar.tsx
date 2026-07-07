@@ -3,7 +3,6 @@ import logoTrapo from '../assets/LOGO_TRAPO.png'
 import {
   GoGraph,
   GoDeviceDesktop,
-  GoGear,
   GoSignOut,
   GoChevronLeft,
   GoChevronRight,
@@ -23,9 +22,9 @@ const Sidebar = ({ onWidthChange }: SidebarProps) => {
   const isActive = (path: string) => location.pathname === path
 
   const handleLogout = () => {
-    localStorage.removeItem('authToken')
+    localStorage.removeItem('token')
     localStorage.removeItem('user')
-    navigate('/login')
+    navigate('/')
   }
 
   // 🔹 Update parent (DisplayHubPage) margin kiri sesuai lebar sidebar

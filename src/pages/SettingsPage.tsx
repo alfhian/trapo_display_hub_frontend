@@ -1,14 +1,12 @@
 // src/pages/SettingsPage.tsx
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { GoPlus, GoTrash } from 'react-icons/go';
 import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
 import { getServices, saveServices, type ServiceConfig } from '../config/services';
 
 function SettingsPage() {
-  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
-
   // State untuk Nama Admin
   const [userName, setUserName] = useState(() => localStorage.getItem('userName') || 'Administrator');
 

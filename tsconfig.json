@@ -1,15 +1,7 @@
 {
-  "compilerOptions": {
-    "noEmitOnError": false,
-    "skipLibCheck": true,
-    "strict": false,
-    "jsx": "react-jsx",
-    "target": "esnext",
-    "module": "esnext",
-    "moduleResolution": "node",
-    "esModuleInterop": true,
-    "types": ["react", "react-dom", "vite/client"]
-  },
-  "include": ["src", "vite-env.d.ts"]
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ]
 }
-

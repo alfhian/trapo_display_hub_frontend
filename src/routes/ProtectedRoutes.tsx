@@ -5,11 +5,13 @@ import { useState, useEffect } from "react";
 
 interface ProtectedRouteProps {
   children: ReactNode;
+  allowedRoles?: string[];
 }
 
-export default function ProtectedRoute({ children }: ProtectedRouteProps) {
+export default function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
   const [isValidating, setIsValidating] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState(true);
 
   useEffect(() => {
     const validateToken = async () => {
@@ -39,6 +41,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
             setIsAuthenticated(false);
           } else {
             setIsAuthenticated(true);
+            setIsAuthorized(!allowedRoles?.length || allowedRoles.includes(user.role));
           }
         }
       } catch (error) {
@@ -52,7 +55,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
     };
 
     validateToken();
-  }, []);
+  }, [allowedRoles]);
 
   // Tampilkan loading indicator saat validasi token
   if (isValidating) {
@@ -66,6 +69,19 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   // Jika tidak terautentikasi, redirect ke halaman login
   if (!isAuthenticated) {
     return <Navigate to="/" replace />;
+  }
+
+  if (!isAuthorized) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 text-center">
+        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+          <h1 className="text-lg font-semibold text-gray-900">Access restricted</h1>
+          <p className="mt-2 text-sm text-gray-500">
+            Akun ini tidak memiliki akses admin untuk halaman Display Hub.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   // Jika terautentikasi, render children

@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react'
+import Swal from 'sweetalert2'
 import Sidebar from '../components/Sidebar'
 import Navbar from '../components/Navbar'
-import Swal from 'sweetalert2'
 import TVDisplayCard from '../components/TVDisplayCard'
 import 'sweetalert2/dist/sweetalert2.min.css'
 import socket from '../socket'
+import { apiUrl, authHeaders } from '../services/api'
+import type { ScreenRecord, SocketScreenUpdate } from '../types/screen'
 
-console.log('🌍 Connecting to socket server:', import.meta.env.VITE_BACKEND_URL)
-
-type ScreenData = {
+type DashboardCard = {
   id: string | null
   screen_id: string
   customer_name: string | null
@@ -21,78 +21,85 @@ type ScreenData = {
   status: 'Active' | 'Inactive'
 } | null
 
-export default function DashboardPage() {
-  const [cards, setCards] = useState<ScreenData[]>([null, null, null, null])
-  const [sidebarWidth, setSidebarWidth] = useState(256) // default expanded width
+const screenRooms = [
+  '00000000-0000-0000-0000-000000000001',
+  '00000000-0000-0000-0000-000000000002',
+  '00000000-0000-0000-0000-000000000003',
+  '00000000-0000-0000-0000-000000000004',
+]
 
-  /** 🔹 Fetch data awal */
+const emptySlots = (): DashboardCard[] => [null, null, null, null]
+
+const toDashboardCard = (screen: ScreenRecord): Exclude<DashboardCard, null> => ({
+  id: screen.id,
+  screen_id: screen.screen_id,
+  customer_name: screen.customer_name || '',
+  brand: screen.brand || '',
+  type: screen.type || '',
+  license_plate: screen.license_plate || '',
+  year: screen.year ? String(screen.year) : '',
+  estimated_time: screen.estimated_time || '',
+  service: screen.service || '',
+  status: screen.id ? 'Active' : 'Inactive',
+})
+
+const toDisplayCardData = (card: DashboardCard) => ({
+  customer_name: card?.customer_name || '',
+  brand: card?.brand || '',
+  type: card?.type || '',
+  service: card?.service || '',
+  license_plate: card?.license_plate || '',
+  status: card?.status || 'Inactive',
+  year: card?.year || '',
+  estimated_time: card?.estimated_time || '',
+})
+
+export default function DashboardPage() {
+  const [cards, setCards] = useState<DashboardCard[]>(emptySlots())
+  const [sidebarWidth, setSidebarWidth] = useState(256)
+
   const fetchData = async () => {
     try {
-      const token = localStorage.getItem('token')
-      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/screens`, {
+      const res = await fetch(apiUrl('/api/screens'), {
         headers: {
-          Authorization: `Bearer ${token}`,
+          ...authHeaders(),
           'Content-Type': 'application/json',
           Accept: 'application/json',
         },
       })
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const data = await res.json()
+      const data: ScreenRecord[] = await res.json()
+      const uniqueScreens = Array.from(
+        new Map(data.map((screen) => [screen.screen_id, screen])).values(),
+      )
 
-      const mapped = [null, null, null, null]
-      data.forEach((screen: any, index: number) => {
+      const mapped = emptySlots()
+      uniqueScreens.forEach((screen, index) => {
         const idx = screen.display_number ? screen.display_number - 1 : index
-        if (idx >= 0 && idx < 4) {
-          mapped[idx] = {
-            id: screen.id,
-            screen_id: screen.screen_id,
-            customer_name: screen.customer_name || '',
-            brand: screen.brand || '',
-            type: screen.type || '',
-            license_plate: screen.license_plate || '',
-            year: screen.year || '',
-            estimated_time: screen.estimated_time || '',
-            service: screen.service || '',
-            status: screen.customer_name ? 'Active' : 'Inactive',
-          }
+        if (idx >= 0 && idx < mapped.length) {
+          mapped[idx] = toDashboardCard(screen)
         }
       })
       setCards(mapped)
     } catch (error) {
-      console.error('❌ Error fetching dashboard data:', error)
+      console.error('Error fetching dashboard data:', error)
     }
   }
 
-  /** 🔹 Socket & lifecycle */
   useEffect(() => {
     fetchData()
+    screenRooms.forEach((screenId) => socket.emit('join_screen', screenId))
 
-    socket.emit('join_screen', '00000000-0000-0000-0000-000000000001')
-    socket.emit('join_screen', '00000000-0000-0000-0000-000000000002')
-    socket.emit('join_screen', '00000000-0000-0000-0000-000000000003')
-    socket.emit('join_screen', '00000000-0000-0000-0000-000000000004')
-
-    socket.on('screen:update', ({ screen_id, payload }) => {
+    const handleScreenUpdate = ({ screen_id, payload }: SocketScreenUpdate) => {
       setCards((prev) => {
         const updated = [...prev]
-        const idx = prev.findIndex((c) => c?.screen_id === screen_id)
-        if (idx !== -1) {
-          if (payload.is_active) {
-            updated[idx] = {
-              screen_id,
-              id: payload.id,
-              customer_name: payload.customer_name,
-              brand: payload.brand,
-              type: payload.type,
-              license_plate: payload.license_plate,
-              year: payload.year,
-              service: payload.service,
-              estimated_time: payload.estimated_time,
-              status: 'Active',
-            }
-          } else {
-            updated[idx] = {
+        const idx = prev.findIndex((card) => card?.screen_id === screen_id)
+        if (idx === -1) return prev
+
+        updated[idx] = payload.is_active
+          ? toDashboardCard({ ...payload, screen_id })
+          : {
               screen_id,
               id: null,
               customer_name: null,
@@ -104,22 +111,20 @@ export default function DashboardPage() {
               estimated_time: null,
               status: 'Inactive',
             }
-          }
-        }
+
         return updated
       })
-    })
+    }
 
+    socket.on('screen:update', handleScreenUpdate)
     return () => {
-      socket.off('screen:update')
-      socket.offAny()
+      socket.off('screen:update', handleScreenUpdate)
     }
   }, [])
 
-  /** 🔹 Remove display */
   const handleRemoveFromDisplay = async (index: number) => {
     const screen = cards[index]
-    if (!screen?.id) return
+    if (!screen?.screen_id) return
 
     const confirm = await Swal.fire({
       title: 'Hapus Slot?',
@@ -133,11 +138,10 @@ export default function DashboardPage() {
     if (!confirm.isConfirmed) return
 
     try {
-      const token = localStorage.getItem('token')
-      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/screens/${screen.id}/remove`, {
+      const res = await fetch(apiUrl(`/api/screens/${screen.screen_id}/remove`), {
         method: 'PATCH',
         headers: {
-          Authorization: `Bearer ${token}`,
+          ...authHeaders(),
           'Content-Type': 'application/json',
         },
       })
@@ -151,7 +155,7 @@ export default function DashboardPage() {
         showConfirmButton: false,
       })
     } catch (err) {
-      console.error('❌ Gagal menghapus slot:', err)
+      console.error('Gagal menghapus slot:', err)
       Swal.fire({
         icon: 'error',
         title: 'Gagal Menghapus',
@@ -160,13 +164,10 @@ export default function DashboardPage() {
     }
   }
 
-  /** 🔹 UI Layout */
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Sidebar fixed */}
       <Sidebar onWidthChange={setSidebarWidth} />
 
-      {/* Main area menyesuaikan sidebar */}
       <main
         className="transition-all duration-300 overflow-y-auto"
         style={{ marginLeft: `${sidebarWidth}px` }}
@@ -176,37 +177,24 @@ export default function DashboardPage() {
         <div className="px-6 py-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-8">
           {cards.map((card, i) => (
             <div
-              key={i}
+              key={card?.screen_id ?? i}
               className="rounded-xl bg-white shadow-sm p-3 flex flex-col items-center"
             >
               <div className="flex items-center justify-between w-full mb-3 px-1">
                 <h3 className="text-sm font-semibold text-gray-700">Slot {i + 1}</h3>
                 <span
                   className={`text-xs font-medium px-2 py-1 rounded-full ${
-                    card?.customer_name
+                    card?.status === 'Active'
                       ? 'bg-green-100 text-green-700'
                       : 'bg-gray-100 text-gray-500'
                   }`}
                 >
-                  {card?.customer_name ? 'Active' : 'Inactive'}
+                  {card?.status === 'Active' ? 'Active' : 'Inactive'}
                 </span>
               </div>
 
               <TVDisplayCard
-                data={
-                  card && card.customer_name
-                    ? card
-                    : {
-                        customer_name: '',
-                        brand: '',
-                        type: '',
-                        service: '',
-                        license_plate: '',
-                        status: 'Inactive',
-                        year: '',
-                        estimated_time: '',
-                      }
-                }
+                data={toDisplayCardData(card)}
                 index={i}
                 onRemove={handleRemoveFromDisplay}
               />

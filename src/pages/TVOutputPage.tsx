@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import logoTrapo from '../assets/LOGO_TRAPO.png';
+import { apiUrl } from '../services/api';
 
 type CustomerData = {
   customerName: string;
@@ -34,7 +35,7 @@ function TVOutputPage() {
         }
 
         // Asumsikan ada endpoint GET untuk mengambil data layar spesifik
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/screens/${screenId}`, {
+        const response = await fetch(apiUrl(`/api/screens/${screenId}`), {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -53,8 +54,8 @@ function TVOutputPage() {
         } else {
           throw new Error('Failed to fetch screen data.');
         }
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch screen data.');
       } finally {
         setIsLoading(false);
       }

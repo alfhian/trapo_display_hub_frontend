@@ -1,8 +1,7 @@
 import { io, Socket } from 'socket.io-client'
+import API_BASE_URL from './services/api'
 
-console.log('🌍 Connecting to socket server:', import.meta.env.VITE_BACKEND_URL)
-
-const socket: Socket = io(import.meta.env.VITE_BACKEND_URL, {
+const socket: Socket = io(API_BASE_URL, {
   transports: ['websocket'],
   path: '/socket.io',
   reconnection: true,
@@ -10,15 +9,11 @@ const socket: Socket = io(import.meta.env.VITE_BACKEND_URL, {
 })
 
 socket.on('connect', () => {
-  console.log('🟢 Connected to socket.io server with ID:', socket.id)
+  console.info('Socket connected:', socket.id)
 })
 
 socket.on('disconnect', () => {
-  console.warn('🔴 Disconnected from socket.io server')
-})
-
-socket.onAny((event, ...args) => {
-  console.log('🛰️ Received socket event:', event, args)
+  console.warn('Socket disconnected')
 })
 
 export default socket
